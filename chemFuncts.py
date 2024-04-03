@@ -1686,7 +1686,7 @@ class compound:
         for i in self.compound:
             if i[0] == el: return i[1]
 
-        raise Exception(f"el {el} not found in {cmpd.equation}")
+        raise Exception(f"el {el} not found in {self.equation}")
 
 class hydrate(compound):
     def __init__(self, equation : str, numWater : int):

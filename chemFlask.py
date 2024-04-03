@@ -45,9 +45,13 @@ def getModes():
         "Coffee Cup Calorimetry", "Bomb Calorimetry", "Average Kinetic Energy",
         "Effusion Rates", "Gas Laws", "Gas Stoiciometry",
         "Electron configuration", "Nobel Gas Shorthand", "Paramagnetic vs Diamagnetic",
-        "Quantum Numbers", "Basic Waves",  "Bohr's Law",
+        "Quantum Numbers", "Basic Waves", "Bohr's Law",
         "De Broglie for electrons", "De Broglie in general", "Heisenburg uncertainty principle",
-        "Identifying types of waves", "Harder Bohr's Law"
+        "Identifying types of waves", "Harder Bohr's Law", "Atomic Size",
+        "Ion Size", "Ionization Energy", "Electronegativity",
+        "Electron Affinity", "All Periodic Trends", "Lattice Energy",
+        "Lewis Dot Structure", "VSEPR", "Bond Order", 
+        "Sigma and Pi Bonds", "Bond Energies", "Enthalpy from Bond Energies"
         ]
 
 def tableOfContents(n):
