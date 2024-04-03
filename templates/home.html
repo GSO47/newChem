@@ -1,0 +1,42 @@
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="ie=edge">
+        <link rel="stylesheet" href="..\static\main.css">
+    </head>
+
+    <body>
+        <form action = "http://localhost:5000/" method = "POST">
+            <p class = "title"> Enter Choice: </p class = "title">
+            <p> <input type = "text" name = "ch" class = "text_input"/> </p>
+            <form action = "/" method = "POST">
+                <input type = "Submit" value = "Submit" class = "button"> <br>
+
+                <input type = "submit" value = "Get Random Questions?" name = "randomButton" class = "button"> <br>
+
+                <input type = "submit" value = "Change Settings" name = "settingsButton" class = "button"> <br>
+
+                <input type = "submit" value = "Polyatomic Ions" name = "polyatomicButton" class = "button"> <br>
+                
+                <input type = "submit" value = "Get Many Questions?" name = "manyQuestionsButton" class = "button"> <br>
+
+                <div class="slidecontainer" height = 0px id = "sliderContainer">
+                    <input type="range" min="1" max="25" value="10" class="slider" id="questionSlider" name = "numQuestionsSlider">
+                    <p>Number of Questions: <span id="numQuestions"></span></p>
+                </div>
+
+            </form>
+
+            <script>
+                var slider = document.getElementById("questionSlider");
+                var output = document.getElementById("numQuestions");
+                output.innerHTML = slider.value;
+
+                slider.oninput = function() {
+                    output.innerHTML = this.value;
+                }
+            </script>
+        </form>
+    </body>
+</html>

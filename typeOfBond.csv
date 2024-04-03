@@ -1,0 +1,14 @@
+bonds, domain, shape, angle, polarity, hybridization
+20, linear, linear, 180, nonpolar, sp
+31, triganoplanar, bent, 120, polar, sp2
+42, tetrahedral, bent, 105, polar, sp3
+53, triganoplanar bypyramidal, linear, 180, nonpolar, dsp3
+30, triganoplanar, triganoplanar, 120, nonpolar, sp2
+41, tetrahedral, triganopyramidal, 107, polar, sp3
+52, triganoplanar bypyramidal, T-shaped, 90, polar, dsp3
+40, tetrahedral, tetrahedral, 120, nonpolar, sp3
+51, triganoplanar bypyramidal, see-saw, 90 + 120, polar, dsp3
+62, octohedral, square planar, 90, nonpolar, d2sp3
+50, triganoplanar bypyramidal, triganoplanar bypyramidal, 90 + 120, nonpolar, dsp3
+61, octohedral, square pyramid, 90, polar, d2sp3
+60, octohedral, octohedral, 90, nonpolar, d2sp3

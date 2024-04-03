@@ -1,0 +1,129 @@
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="ie=edge">
+        <link rel="stylesheet" href="..\static\main.css">
+    </head>
+
+    <body>
+        <h1> Settings </h1>
+        <form action = "/settings" method = "POST">
+            <!-- Choose the type of reaction -->
+            <div class = "sectioncontainer">
+                <p> Choose what types of reactions to include. Choosing nothing will pick a reaction at random </p>
+                <label class="container"> 
+                    <input type="checkbox" checked name = "rxSynth">
+                    <span class="checkmark"></span>
+                    Synthesis <br> 
+                </label>
+                
+                <label class="container"> 
+                    <input type="checkbox" checked name = "rxDecomp">
+                    <span class="checkmark"></span>
+                    Decomposition <br>
+                </label>
+                
+                <label class="container"> 
+                    <input type="checkbox" checked name = "rxComb">
+                    <span class="checkmark"></span>
+                    Combustion<br> 
+                </label>
+                
+                <label class="container"> 
+                    <input type="checkbox" checked name = "rxSingle">
+                    <span class="checkmark"></span>
+                    Single Replacement <br>
+                </label>
+
+                <label class="container"> 
+                    <input type="checkbox" checked name = "rxDouble">
+                    <span class="checkmark"></span>
+                    Double Replacement <br>
+                </label>
+            </div>
+
+            <!-- Choose which polyatomic ions are used (for polyatomic ions test) (WIP)--> 
+            <div class = "sectioncontainer">
+                <p> What polyatomic ions do you want? </p>
+                <label class = "radio_container">
+                    <input type = "radio" id = "all" name = "polyatomic" value = "2" checked>
+                    <span class = "radio_checkmark"></span>
+                    All <br>
+                </label>
+                <label class = "radio_container"> 
+                    <input type = "radio" id = "1" name = "polyatomic" value = "0">
+                    <span class = "radio_checkmark"></span>
+                    Difficult <br>
+                </label>
+                <label class = "radio_container"> 
+                    <input type = "radio" id = "2" name = "polyatomic" value = "1">
+                    <span class = "radio_checkmark"></span>
+                    -Ates and -Ites <br>
+                </label>
+            </div>
+
+            <!-- Choose which modes are used-->
+            <div class = "sectioncontainer">
+                <p> Which unit do you want to study? </p>
+                <label class = "radio_container">
+                    <input type = "radio" id = "all" name = "unit" value = "0" checked>
+                    <span class = "radio_checkmark"></span>
+                    All <br>
+                </label>
+                <label class = "radio_container"> 
+                    <input type = "radio" id = "all" name = "unit" value = "1">
+                    <span class = "radio_checkmark"></span>
+                    Math Review <br>
+                </label>
+                <label class = "radio_container"> 
+                    <input type = "radio" id = "all" name = "unit" value = "2">
+                    <span class = "radio_checkmark"></span>
+                    Chemical Nomenclature <br>
+                </label>
+                <label class = "radio_container">
+                    <input type = "radio" id = "all" name = "unit" value = "3">
+                    <span class = "radio_checkmark"></span>
+                    Chemical Quantities <br>
+                </label>
+                <label class = "radio_container">
+                    <input type = "radio" id = "all" name = "unit" value = "4">
+                    <span class = "radio_checkmark"></span>
+                    Chemical Reaction <br>
+                </label>
+                <label class = "radio_container">
+                    <input type = "radio" id = "all" name = "unit" value = "5">
+                    <span class = "radio_checkmark"></span>
+                    Stoichiometry <br>
+                </label>
+                <label class = "radio_container">
+                    <input type = "radio" id = "all" name = "unit" value = "6">
+                    <span class = "radio_checkmark"></span>
+                    Thermochemistry <br>
+                </label>
+                <label class = "radio_container">
+                    <input type = "radio" id = "all" name = "unit" value = "7">
+                    <span class = "radio_checkmark"></span>
+                    Semester One <br>
+                </label>
+                <label class = "radio_container">
+                    <input type = "radio" id = "all" name = "unit" value = "8">
+                    <span class = "radio_checkmark"></span>
+                    Gas Laws <br>
+                </label>
+                <label class = "radio_container">
+                    <input type = "radio" id = "all" name = "unit" value = "9">
+                    <span class = "radio_checkmark"></span>
+                    Electron Configuration <br>
+                </label>
+                <label class = "radio_container">
+                    <input type = "radio" id = "all" name = "unit" value = "10">
+                    <span class = "radio_checkmark"></span>
+                    Periodic Trends and Bonds <br>
+                </label>
+            </div>
+            
+            <input type = "submit" value = "Save Changes" class = "button">
+        </form>
+    </body>
+</html>
