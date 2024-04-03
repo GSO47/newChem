@@ -858,19 +858,19 @@ def randUnit(cmpd, moles): # cmpd must be a compound object; returns [value, uni
 
     return [values[i], units[i], moles]
 
-def getUnit():
-    powerList = []
-    for unit in units:
-        p = random.randrange(-2,3)
-        powerList.append(p)
-
-    complexUnits =  []
-    factor = 0
+def getUnit(powerList = []):
+    if powerList == []:
+        for unit in units:
+            p = random.randrange(-2,3)
+            powerList.append((unit, p))
 
     for i, unit in enumerate(units):
+        p = powerList[i][1]
+        if p == 0: continue
+        complexUnits = []
+        factor = 0
         n  = random.randrange(1,15)
         prefix = prefixNumbers.get(n)
-        p = powerList[i]
         complexUnit = prefix + unit + "^" + str(p)
         complexUnits.append(complexUnit)
         prefixFactor = prefixes.get(prefix)
@@ -1437,6 +1437,10 @@ class compound:
         if self.temp < fp: startState = "solid"
         elif self.temp < bp: startState = "liquid"
         else: startState = "gas"
+
+        if startState == "solid" and sSpecificHeat == 0: startState = "liquid"
+        if startState == "liquid" and lSpecificHeat == 0: startState = "gas"
+
         mass = self.getMass(moles)
         # print(startState)
         if heatSupplied > 0: # for heating

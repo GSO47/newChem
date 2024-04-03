@@ -51,7 +51,7 @@ def getModes():
         ]
 
 def tableOfContents(n):
-    return { 0 : [i for i, j in enumerate(getModes())], 
+    return { 0 : [i for i, _ in enumerate(getModes())], 
       1 : [1], 
       2: [2, 3, 4, 5], 
       3: [6, 7, 8, 9, 10], 
@@ -297,3 +297,4 @@ def errorRedirect():
 
 if __name__ == "__main__":
     app.run(debug = True)
+    # hello princess

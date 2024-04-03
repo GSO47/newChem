@@ -3,8 +3,20 @@ from chemFuncts import *
 from chemData import *
 
 def one(**kwargs):
-    startUnit = getUnit()
-    endUnit = getUnit()
+    powers = [(unit, random.randint(-2,3)) for unit in units]
+    for unit, p in powers:
+        if p == 0: powers.remove((unit, p))
+    print(powers)
+    start = [random.choice(list(prefixNumbers.values())) for _ in powers]
+    end = [random.choice(list(prefixNumbers.values())) for _ in powers]
+
+    startStr = ""
+    for s, p in zip(start, powers):
+        unit, p = p
+        startStr
+
+    startUnit = getUnit(powers)
+    endUnit = getUnit(powers)
     print("Start: " + startUnit[0])
     print("End: " + endUnit[0])
     print("You have to multiply the start by 10^x, to get to the final unit. What is x?")
