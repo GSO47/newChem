@@ -1268,7 +1268,7 @@ class compound:
         SpecialCmpds = {"NH3": "ammonia", "H2O": "water", "C2H6O" : "Grain alcohol / ethanol", 
                         "CH3CH2OH" : "Grain alcohol / ethanol", "C2H5OH" : "Grain alcohol / ethanol", "CHCl3" : "Chloroform",
                         "CH3COCH3" : "acetone", "C6H6" : "benzene", "CH4" : "methane",
-                        "CH3OH" : "methanol"}
+                        "CH3OH" : "methanol", "C6H12O6" : "glucose", "C12H22O11" : "sucrose"}
         uniqueEls = []
         for i in cmpd:
             if type(i) != int and i[0] not in uniqueEls: uniqueEls.append(i[0])
@@ -1688,6 +1688,10 @@ class compound:
 
         raise Exception(f"el {el} not found in {self.equation}")
 
+    def isIonic(self):
+        metal = self.compound[0][0]
+        return findElement(metal)[0] in [3, 4, 11, 12, 19, 20, 37, 38, 55, 56, 87, 88]
+
 class hydrate(compound):
     def __init__(self, equation : str, numWater : int):
         super().__init__(equation)
@@ -2057,6 +2061,56 @@ class reaction:
         except: return f"error finding the enthalpy of {self}"
 
         return react - prod
+
+# do Kf and Kb stuff (add table and method in solution and function to get it (or randomly generate it))
+# add methods to make dilutions easier
+class solution:
+    def __init__(self, solute : compound, mass_solute : int = 0, moles_solute : int = 0, moles_solvent : int = 1, solvent : compound = compound("H2O")) -> None:
+        self.solute = solute
+        self.solvent = solvent
+        if mass_solute == 0 and moles_solute == 0: self.moles_solute = 0
+        elif mass_solute == 0: self.moles_solvent = moles_solvent
+        else: self.moles_solute = mass_solute / solute.getMass()
+        self.moles_solute = moles_solute
+    
+    def molarity(self):
+        return self.moles_solute / self.volume
+
+    def addSolute(self, amnt):
+        self.moles_solute += amnt
+        self.moles_solvent += amnt
+
+    def dissovles(self):
+        return self.solute.isPolar() == self.solvent.isPolar()
+    
+    def aqueous(self):
+        return self.solvent == compound("H2O")
+
+    def describeSolute(self):
+        if self.checkSolution != None: return self.checkSolution()
+
+        if (self.solute.isSoluable() and self.solute.isIonic()) or self.solute.equation in ["HI", "HCl", "HBr"]: return "Strong Electrolyte"
+        if not self.solute.isPolar(): return "Nonelectrolyte"
+        return "Weak Electrolyte"
+
+    def saturation(self):
+        if self.checkSolution != None: return self.checkSolution()
+
+        solubility = solubilities.get(self.solute.equation)
+        if solubility == None: return "Unknown"
+
+        gSolute = self.solute.getMass(self.moles_solute)
+        gSolvent = self.solvent.getMass(self.moles_solvent)
+        s = gSolute / (100 * gSolvent)
+
+        if s > solubility: return "Oversaturated"
+        if s == solubility: return "Saturated"
+        return "Unsaturated"
+
+    def checkSolution(self):
+        if not self.dissovles(): return "You must have a solution that dissolves"
+        if not self.aqueous(): return "You must have an aqueous solution"
+        return None
 
 def getIsMolecular(cmpd : compound):
     for el in cmpd.compound:

@@ -281,6 +281,7 @@ def home():
             return redirect(url_for("errorPage", errorOccured = "empty-input"))
         try: 
             choice = int(choice)
+            if choice == 0: return redirect(url_for("tableOfContents"))
         except:
             return redirect(url_for("errorPage", errorOccured = "invalid-input"))
         
@@ -298,6 +299,18 @@ def errorPage(errorOccured):
 @app.route("/error", methods = ["POST"])
 def errorRedirect():
     return redirect(url_for("home"))
+
+@app.route("/toc", methods = ["POST", "GET"])
+def tableOfContents():
+    if request.method == "GET":
+        toc = []
+        for i, mode in enumerate(getModes()):
+            toc.append(f"{i}. {mode}")
+        return render_template("tableOfContents.html", text = toc)
+    
+    if request.method == "POST":
+        return redirect(url_for("home"))
+        
 
 if __name__ == "__main__":
     app.run(debug = True)

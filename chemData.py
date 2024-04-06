@@ -199,6 +199,12 @@ electronegativities = {"H" : 2.2, "Li" : 1.0, "Na" : .9, "K" : .8, "Rb" : .8, "C
                 "F" : 4.0, "Cl" : 3.2, "Br" : 2.9, "I" : 2.7, "At" : 2.2,
                 "He" : 0, "Ne" : 0, "Ar" : 0, "Kr" : 0, "Xe" : 0, "Rn" : 0}
 
+with open("solubilities.csv") as f:
+    file = csv.reader(f)
+    solubilities = {}
+    for line in file:
+        solubilities.update({line[0] : [None if item == " -" else float(item) for item in line[1:]]})
+
 Ratm = .08206 # Universal Gas Constant, atm
 RkPa = 8.3145 # Universal Gas Constant, kPa
 c = 3e8 # Speed of Light, m/s
