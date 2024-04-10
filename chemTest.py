@@ -1,5 +1,4 @@
-from chemData import *
+from chemFuncts import compound
 
-cmpd = "Ba(OH)2"
-
-print(cmpd in solubilities.keys())
+cmpd = compound("Na2O2")
+print(cmpd.getNameFromEq())

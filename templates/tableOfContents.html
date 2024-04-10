@@ -7,11 +7,13 @@
     </head>
 
     <body>
-        <h1> Types: <br>
+        <br> <h1> Options: </h1> <br>
+        <div class = "sectioncontainer">
             <p>{% for para in text %}
                 {{para}}<br><br>
             {% endfor %}</p>
-        </h1>
+        </div>
+
         <form action = "/toc" method = "POST">
             <input type = "submit" value = "Go Home?" class = "button">
         </form>

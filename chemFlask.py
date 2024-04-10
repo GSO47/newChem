@@ -120,6 +120,8 @@ def getManyAnswers():
 setRxTypes([])
 setPolyatomic([i for i in list(polyatomicIons.keys())])
 
+# remember to change the action method in 'home.html' when running on python anywhere
+
 @app.route('/question/<num>', methods = ["POST", "GET"])
 def getQuestion(num):
     if request.method == "GET":
@@ -281,7 +283,7 @@ def home():
             return redirect(url_for("errorPage", errorOccured = "empty-input"))
         try: 
             choice = int(choice)
-            if choice == 0: return redirect(url_for("tableOfContents"))
+            if choice == 0: return redirect(url_for("tableOfContentsPage"))
         except:
             return redirect(url_for("errorPage", errorOccured = "invalid-input"))
         
@@ -301,11 +303,11 @@ def errorRedirect():
     return redirect(url_for("home"))
 
 @app.route("/toc", methods = ["POST", "GET"])
-def tableOfContents():
+def tableOfContentsPage():
     if request.method == "GET":
         toc = []
         for i, mode in enumerate(getModes()):
-            toc.append(f"{i}. {mode}")
+            toc.append(f"{i+1}. {mode}")
         return render_template("tableOfContents.html", text = toc)
     
     if request.method == "POST":
@@ -314,4 +316,3 @@ def tableOfContents():
 
 if __name__ == "__main__":
     app.run(debug = True)
-    # hello princess

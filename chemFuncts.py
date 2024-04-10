@@ -1265,10 +1265,13 @@ class compound:
         else: 
             eq = eqOveride
             cmpd = cmpdOverride
-        SpecialCmpds = {"NH3": "ammonia", "H2O": "water", "C2H6O" : "Grain alcohol / ethanol", 
-                        "CH3CH2OH" : "Grain alcohol / ethanol", "C2H5OH" : "Grain alcohol / ethanol", "CHCl3" : "Chloroform",
+        SpecialCmpds = {"NH3": "ammonia", "H2O": "water", "C2H6O" : "ethanol", 
+                        "CH3CH2OH" : "ethanol", "C2H5OH" : "ethanol", "CHCl3" : "Chloroform",
                         "CH3COCH3" : "acetone", "C6H6" : "benzene", "CH4" : "methane",
-                        "CH3OH" : "methanol", "C6H12O6" : "glucose", "C12H22O11" : "sucrose"}
+                        "CH3OH" : "methanol", "C6H12O6" : "glucose", "C12H22O11" : "sucrose",
+                        "C6H6O" : "phenol", "C6H5OH" : "phenol", "C6H5NO2" : "nitrobenzene",
+                        "C10H16O" : "camphor"}
+
         uniqueEls = []
         for i in cmpd:
             if type(i) != int and i[0] not in uniqueEls: uniqueEls.append(i[0])
@@ -1544,6 +1547,21 @@ class compound:
     def isBinaryMolecular(self):
         return len(self.uniqueEls()) == 2 and self.isMolecular()
 
+    def isTernaryIonic(self):
+        if "(" in self.equation: return True
+        if self.equation[-2:] == "O2": return True
+        pass
+
+    # incomplete
+    def hasPeroxide(self):
+        if "O2" not in self.equation or not self.isIonic(): return False
+        if "(O2)" in self.equation: return True
+        if len(self.uniqueEls()) != 2: return False
+        el1 = self.compound[0][0]
+        if findElement(el1)[0] not in [4, 12, 20, 38, 56, 88]: return False
+
+        return True
+
     def isElement(self):
         return all([i.islower() and not i.isdigit() for i in self.equation[1:]])
 
@@ -1690,7 +1708,7 @@ class compound:
 
     def isIonic(self):
         metal = self.compound[0][0]
-        return findElement(metal)[0] in [3, 4, 11, 12, 19, 20, 37, 38, 55, 56, 87, 88]
+        return findElement(metal)[0] in metalsDict
 
 class hydrate(compound):
     def __init__(self, equation : str, numWater : int):
@@ -2062,23 +2080,64 @@ class reaction:
 
         return react - prod
 
-# do Kf and Kb stuff (add table and method in solution and function to get it (or randomly generate it))
-# add methods to make dilutions easier
 class solution:
-    def __init__(self, solute : compound, mass_solute : int = 0, moles_solute : int = 0, moles_solvent : int = 1, solvent : compound = compound("H2O")) -> None:
+    def __init__(self, solute : compound, mass_solute : float = None, moles_solute : float = None, moles_solvent : float = None, total_volume : float = None, solvent : compound = compound("H2O")) -> None:
         self.solute = solute
         self.solvent = solvent
-        if mass_solute == 0 and moles_solute == 0: self.moles_solute = 0
-        elif mass_solute == 0: self.moles_solvent = moles_solvent
-        else: self.moles_solute = mass_solute / solute.getMass()
-        self.moles_solute = moles_solute
+
+        self.volume = None
+        self.moles_solute = None
+        self.moles_solvent = None
+
+        if moles_solute and mass_solute: raise Exception("solute mass is overconstrained")
+        if mass_solute: self.moles_solute = mass_solute / self.solute.getMass()
+        if moles_solute: self.moles_solute = moles_solute
     
+        if moles_solvent: self.moles_solvent = moles_solvent
+
+        if total_volume:
+            self.volume = total_volume
+            if self.moles_solvent and self.moles_solvent: raise Exception("volume is overconstrained")
+            if not self.moles_solute and not self.moles_solvent:
+                self.moles_solute = 0
+                self.moles_solvent = total_volume / 22.4
+            elif not self.moles_solute: self.moles_solute = self.volume / 22.4 - self.moles_solvent
+            elif not self.moles_solvent: self.moles_solvent = self.volume / 22.4 - self.moles_solute
+        else:
+            if not self.moles_solute: self.moles_solute = 0
+            if not self.moles_solvent: self.moles_solvent = 1
+            self.volume = 22.4 * (moles_solute + moles_solvent)
+    
+    def moleFractions(self, solute = True):
+        if solute: return self.moles_solute / (self.moles_solute + self.moles_solvent)
+        else: return self.moles_solvent / (self.moles_solute + self.moles_solvent)
+    
+    def molality(self):
+        return 1000 * self.moles_solute / self.solvent.getMass(self.moles_solvent)
+
     def molarity(self):
         return self.moles_solute / self.volume
+    
+    def pMV(self):
+        return self.solute.getMass(self.moles_solute) / (1000 * self.volume)
+    
+    def pVV(self):
+        return self.moles_solute / self.moles_solvent
 
     def addSolute(self, amnt):
         self.moles_solute += amnt
         self.moles_solvent += amnt
+
+    def setMolarity(self, newMolarity, addSolvent = True, addSolute = True):
+        if addSolute and addSolvent: raise Exception("Only choose addSolute or addSolvent")
+        if addSolute:
+            M = self.molarity()
+            self.moles_solute *= newMolarity / M
+            self.volume *= M / newMolarity
+        if addSolvent:
+            M - self.molarity()
+            self.moles_solvent *= M / newMolarity
+            self.volume *= newMolarity / M
 
     def dissovles(self):
         return self.solute.isPolar() == self.solvent.isPolar()
@@ -2111,6 +2170,32 @@ class solution:
         if not self.dissovles(): return "You must have a solution that dissolves"
         if not self.aqueous(): return "You must have an aqueous solution"
         return None
+
+    def boilingPoint(self):
+        K = bpElevationConstants.get(self.solvent.getEq())
+        if K == None: K = round(random.random() * 9 + 1, 2)
+
+        try: return  miscBps.get(self.solvent.getEq()) + self.particlesPerSolute() * K * self.molality()
+        except: return None
+        
+    def freezingPoint(self):
+        K = fpDepressionConstants.get(self.solvent.getEq())
+        if K == None: K = round(random.randint() * 9 + 1, 2)
+
+        try: return miscFps.get(self.solvent.getEq()) - self.particlesPerSolute() * K * self.molality()
+        except: return None
+
+    def particlesPerSolute(self):
+        if self.solute.isMolecular(): return 1
+        if len(self.solute.uniqueEls()) == 2: return self.solute.numElements()
+        else:
+            m, nm = ionizeTernaryIonic(self.solute.equation)
+            m = m[1]
+            n = n[1]
+            commonFactor = math.gcd(m,n)
+            m /= commonFactor
+            n /= commonFactor
+            return int(m + n)
 
 def getIsMolecular(cmpd : compound):
     for el in cmpd.compound:
@@ -2512,9 +2597,5 @@ def getIMF(cmpd1 : compound, cmpd2 : compound):
     return r
 
 if __name__ == "__main__":
-    cmpds = [compound("CH4"), compound("H2O"), compound("C2H5COOC2H5"), compound("C8H17COCH3"), compound("CO2")]
+    sol = solution(compound("NaCl"), moles_solute = 1, moles_solvent = 2)
 
-    for i in cmpds:
-        print(i.equation)
-        print(getIMF(i, i))
-        print("\n")
