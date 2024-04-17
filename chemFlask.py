@@ -45,13 +45,17 @@ def getModes():
         "Coffee Cup Calorimetry", "Bomb Calorimetry", "Average Kinetic Energy",
         "Effusion Rates", "Gas Laws", "Gas Stoiciometry",
         "Electron configuration", "Nobel Gas Shorthand", "Paramagnetic vs Diamagnetic",
-        "Quantum Numbers", "Basic Waves", "Bohr's Law",
+        "Quantum Numbers", "Basic Waves",  "Bohr's Law",
         "De Broglie for electrons", "De Broglie in general", "Heisenburg uncertainty principle",
         "Identifying types of waves", "Harder Bohr's Law", "Atomic Size",
         "Ion Size", "Ionization Energy", "Electronegativity",
         "Electron Affinity", "All Periodic Trends", "Lattice Energy",
         "Lewis Dot Structure", "VSEPR", "Bond Order", 
-        "Sigma and Pi Bonds", "Bond Energies", "Enthalpy from Bond Energies"
+        "Sigma and Pi Bonds", "Bond Energies", "Enthalpy from Bond Energies",
+        "Solubility Calculations", "Determining Saturation", "Dilution",
+        "Solutions Unit Conversions (Aqueous)", "Solutions Unit Conversions (general)", "Colligative Properties", 
+        "Molar Mass From bp/fp", "Henry's Law", "Reactions with Solubility Units", 
+        "Hydrates", "Polar vs Nonpolar"
         ]
 
 def tableOfContents(n):
@@ -65,7 +69,8 @@ def tableOfContents(n):
       7: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
       8 : [18, 19, 20, 21],
       9 : [22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32],
-      10: [i for i in range(33, 46)]}.get(n)
+      10: [i for i in range(33, 46)],
+      11: [i for i in range(46,57)]}.get(n)
 
 def setRandomChoices(choices):
     global randomChoices

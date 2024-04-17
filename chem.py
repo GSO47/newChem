@@ -19,7 +19,11 @@ modeList = [
         "Ion Size", "Ionization Energy", "Electronegativity",
         "Electron Affinity", "All Periodic Trends", "Lattice Energy",
         "Lewis Dot Structure", "VSEPR", "Bond Order", 
-        "Sigma and Pi Bonds", "Bond Energies", "Enthalpy from Bond Energies"
+        "Sigma and Pi Bonds", "Bond Energies", "Enthalpy from Bond Energies",
+        "Solubility Calculations", "Determining Saturation", "Dilution",
+        "Solutions Unit Conversions (Aqueous)", "Solutions Unit Conversions (general)", "Colligative Properties", 
+        "Molar Mass From bp/fp", "Henry's Law", "Reactions with Solubility Units", 
+        "Hydrates", "Polar vs Nonpolar"
         ]
 
 rxType = ""
@@ -121,7 +125,8 @@ while True:
                                 "Semester 1": [i for i in range(1, 18)],
                                 "Chapter 12" : [18, 19, 20, 21],
                                 "Chapter 13" : [i for i in range(22, 33)],
-                                "Chapter 14-16" : [i for i in range(33, 46)]}
+                                "Chapter 14-16" : [i for i in range(33, 46)],
+                                "Chapter 17-18" : [i for i in range(46, 57)]}
                     for i, preset in enumerate(list(presets.keys())): print(f"{i+1}. {preset}: {presets.get(preset)}")
                     choices = list(presets.values())[int(input("Choose a preset: ")) -1]
                 else:

@@ -201,21 +201,24 @@ electronegativities = {"H" : 2.2, "Li" : 1.0, "Na" : .9, "K" : .8, "Rb" : .8, "C
 
 with open("solubilities.csv") as f:
     file = csv.reader(f)
+    next(file)
     solubilities = {}
     for line in file:
         solubilities.update({line[0] : [None if item == " -" else float(item) for item in line[1:]]})
 
-bpElevationConstants = {"H2O" : .512, "C2H6O" : 1.19, "C6H6" : 2.53, "C6H12" : 2.79, "HC2H3O2" : 3.07, "C6H6O" : 3.56, "C6H5NO2" : 5.24, "C10H16O" : 5.95}
-fpDepressionConstants = {"H2O" : 1.86, "HC2H3O2" : 3.9, "C6H6" : 5.12, "C6H5NO2" : 7, "C6H6O" : 7.4, "C6H12" : 20.2, "C10H16O" : 37.7}
+bpElevationConstants = {"H2O" : .512, "C2H6O" : 1.19, "C6H6" : 2.53, "C6H12" : 2.79, "C2H4O2" : 3.07, "C6H6O" : 3.56, "C6H5NO2" : 5.24, "C10H16O" : 5.95}
+fpDepressionConstants = {"H2O" : 1.86, "C2H4O2" : 3.9, "C6H6" : 5.12, "C6H5NO2" : 7, "C6H6O" : 7.4, "C6H12" : 20.2, "C10H16O" : 37.7}
 
 with open("miscBpsAndFps.csv") as f:
     file = csv.reader(f)
     next(file)
     miscBps = {}
     miscFps = {}
+    miscDensities = {}
     for line in file:
         miscBps.update({line[0] : float(line[1])})
         miscFps.update({line[0] : float(line[2])})
+        miscDensities.update({line[0] : float(line[3])})
 
 nonmetalsDict = {1,2,6,7,8,9,10,15,16,17,18,34,35,36,53,54,85,86,117,118}
 semimetalsDict = {5,14,32,33,51,52,84}

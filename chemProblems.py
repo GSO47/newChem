@@ -1118,6 +1118,288 @@ def fortyfive(**kwargs):
     print(rx)
     return rx.enthalpyFromBonds()
 
+def fortysix(**kwargs):
+    while True:
+        cmpd = compound(random.choice(list(solubilities)))
+        temp = random.randint(0,3)
+        if solubilities.get(cmpd.equation)[temp] != None: break
+
+    temps = [0, 20, 50, 100]
+    amnt = random.randint(1,20) * 25
+    mol = solubilities.get(cmpd.equation)[temp] * amnt / 100 / cmpd.getMass()
+    n = randUnit(cmpd, mol)
+    print(f"How much {cmpd.getNameFromEq()} is soluble in {amnt} g of H2O at {temps[temp]} degrees C ({n[1]})?")
+    return n[0]
+
+def fortyseven(**kwargs):
+    while True:
+        cmpd = compound(random.choice(list(solubilities)))
+        temp = random.randint(0,3)
+        if solubilities.get(cmpd.equation)[temp] != None: break
+
+    temps = [0, 20, 50, 100]
+    amnt = random.randint(1,20) * 25
+    theoretical = solubilities.get(cmpd.equation)[temp] * amnt / 100
+    changeBool = random.randint(-1,1)
+    accAmnt = theoretical + changeBool * .05 * random.randint(1,10) * theoretical
+
+    print(f"Is a solution of {accAmnt} of {cmpd.getNameFromEq()} super-/un-/saturated in {amnt} g of H2O at {temps[temp]} degrees C?")
+    return ["unsaturated", "saturated", "supersaturated"][changeBool + 1]
+
+def fortyeight(**kwargs):
+    initialMol = random.randint(1,40) / 20
+    while (finalMol := random.randint(1,40) / 200) == initialMol: pass
+    initialVol = random.randint(1,40) / 20 
+    finalVol = initialMol * initialVol / finalMol
+    temp = [(initialMol, "initial molarity", "M"), (initialVol, "initial volume", "L"), (finalMol, "final molarity", "M"), (finalVol, "final volume", "L")]
+    other = temp.pop(random.randint(0,3))
+    for t in temp: print(f"The {t[1]} is {t[0]} {t[2]}. ", end = "")
+    print(f"What is the {other[1]}?")
+    return f"{other[0]} {other[2]}"
+
+def fortynine(**kwargs):
+    moles_solute = random.randint(1,40) / 20
+    total_volume = random.randint(1,150) / 50
+    sol = solution(compound(), moles_solute = moles_solute, total_volume = total_volume)
+    
+    while True:
+        choices = [(f"There are {sol.moles_solute} moles of solute.", "How many moles of the solute are there?"), (f"There are {sol.moles_solvent} moles of solvent.", "How many moles of the solvent are there?"), 
+               (f"It's volume is {sol.volume} L.", "What is the total volume"), (f"Its molarity is {round_sig(sol.molarity())} M" "What is the molarity?"), 
+               (f"Its molality is {round_sig(sol.molality())} m.", "What is the molality?"), (f"The mole fraction of the solute is {round_sig(sol.moleFractions())}.", "What is the mole fraction of the solute?"), 
+               (f"The mole fraction of the solvent is {round_sig(sol.moleFractions(False))}.", "What is the mole fraction of the solvent?"), (f"The percent m/v of the solution is {round_sig(sol.pMV())}%.", "What is the percent m/v?")]
+
+        inds = set()
+        choice_one = random.choice(choices)
+        inds.add(choices.index(choice_one))
+        choices.remove(choice_one)
+        choice_two = random.choice(choices)
+        inds.add(choices.index(choice_two))
+        choices.remove(choice_two)
+        chosen_answer = random.choice(choices)
+        inds.add(choices.index(chosen_answer))
+
+        b = True
+        for i in [{5,6}, {3,4}, {3,7}, {4,7}, {1,2}]:
+            if inds & i == i: b = False
+
+        if b: break
+
+
+    print(f"Consider an aqueous solution of {sol.solute.getNameFromEq()}. Remember that the density of water is 1 g/mL and ignore the solute's volume. {choice_one[0]} {choice_two[0]} {chosen_answer[1]}")
+    return chosen_answer[0]
+
+def fifty(**kwargs):
+    moles_solute = random.randint(1,40) / 20
+    total_volume = random.randint(1,150) / 50
+    solvent = compound(random.choice(list(fpDepressionConstants)))
+    sol = solution(compound(), moles_solute = moles_solute, total_volume = total_volume, solvent = solvent)
+
+    while True:
+        choices = [(f"There are {sol.moles_solute} moles of solute.", "How many moles of the solute are there?"), (f"There are {sol.moles_solvent} moles of solvent.", "How many moles of the solvent are there?"), 
+               (f"It's volume is {sol.volume} L.", "What is the total volume"), (f"Its molarity is {round_sig(sol.molarity())} M.", "What is the molarity?"), 
+               (f"Its molality is {round_sig(sol.molality())} m.", "What is the molality?"), (f"The mole fraction of the solute is {round_sig(sol.moleFractions())}.", "What is the mole fraction of the solute?"), 
+               (f"The mole fraction of the solvent is {round_sig(sol.moleFractions(False))}.", "What is the mole fraction of the solvent?"), (f"The percent m/v of the solution is {round_sig(sol.pMV())}%.", "What is the percent m/v?"),
+               (f"The density of the solvent is {sol.solvent_density} g/mL.", "What is the density of the solvent?")]
+        inds = set()
+        choice_one = random.choice(choices)
+        inds.add(choices.index(choice_one))
+        choices.remove(choice_one)
+        choice_two = random.choice(choices)
+        inds.add(choices.index(choice_two))
+        choices.remove(choice_two)
+        choice_three = random.choice(choices)
+        inds.add(choices.index(choice_three))
+        choices.remove(choice_three)
+        chosen_answer = random.choice(choices)
+        inds.add(choices.index(chosen_answer))
+
+        b = True
+        for i in [{5,6}, {3,4}, {3,7}, {4,7}, {1,2}]:
+            if inds & i == i: b = False
+
+        if b: break
+
+    print(f"Consider a solution, which is not necessarily aqueous, containing {sol.solute.getNameFromEq()} (solute). Ignore the solute's volume. {choice_one[0]} {choice_two[0]} {choice_three[0]} {chosen_answer[1]}")
+    return chosen_answer[0]
+
+def fiftyone(**kwargs):
+    moles_solute = random.randint(1,40) / 20
+    total_volume = random.randint(1,150) / 50
+    bpOrFp = bool(random.getrandbits(1))
+
+    if bpOrFp: solvent = random.choice(list(bpElevationConstants)) # boiling point
+    else: solvent = random.choice(list(fpDepressionConstants)) # freezing point
+
+    sol = solution(compound(getRandomCompound(3,0,1,0,2)), moles_solute= moles_solute, total_volume= total_volume, solvent= compound(solvent))
+    word = ["boiling", "freezing"][int(bpOrFp)]
+
+    while True:
+        choices = [(f"There is/are {sol.moles_solute} moles of solute.", "How many moles of the solute are there?"), (f"There is/are {sol.moles_solvent} moles of solvent.", "How many moles of the solvent are there?"), 
+               (f"The solvent's volume is {sol.volume} L.", "What is the total volume"), (f"Its molarity is {round_sig(sol.molarity())} M", "What is the molarity?"), 
+               (f"The mole fraction of the solute is {round_sig(sol.moleFractions())}.", "What is the mole fraction of the solute?"), (f"The mole fraction of the solvent is {round_sig(sol.moleFractions(False))}.", "What is the mole fraction of the solvent?"), 
+               (f"The percent m/v of the solution is {round_sig(sol.pMV())}%.", "What is the percent m/v?"), (f"The density of the solvent is {sol.solvent_density} g/mL.", "What is the density of the solvent?")]
+
+        inds = set()
+        choice_one = random.choice(choices)
+        inds.add(choices.index(choice_one))
+        choices.remove(choice_one)
+        choice_two = random.choice(choices)
+        inds.add(choices.index(choice_two))
+        choices.remove(choice_two)
+        chosen_answer = random.choice(choices)
+        inds.add(choices.index(chosen_answer))
+
+        b = True
+        for i in [{5,6}, {3,4}, {3,7}, {4,7}, {1,2}]:
+            if inds & i == i: b = False
+
+        if b: break
+
+    print(f"Consider a solution, which is not necessarily aqueous, containing {sol.solute.getNameFromEq()} (solute). Ignore the solute's volume. {choice_one[0]} {choice_two[0]} What is the {word} point?", end = "")
+    print(f" The molar mass of the solvent is {sol.solvent.getMass()} g/mol.", end = "")
+    if bpOrFp: 
+        print(f" The boiling point of the solvent is {miscBps.get(solvent)} and Kb is {bpElevationConstants.get(solvent)}")
+        return round_sig(sol.boilingPoint(), 6)
+    else: 
+        print(f" The freezing point of the solve is {miscFps.get(solvent)} and Kf is {bpElevationConstants.get(solvent)}")
+        return round_sig(sol.freezingPoint(), 6)
+
+def fiftytwo(**kwargs):
+    moles_solute = random.randint(1,40) / 20
+    total_volume = random.randint(1,150) / 50
+    bpOrFp = bool(random.getrandbits(1))
+
+    if bpOrFp: solvent = random.choice(list(bpElevationConstants)) # boiling point
+    else: solvent = random.choice(list(fpDepressionConstants)) # freezing point
+
+    givenEmpirical = bool(random.getrandbits(1))
+
+    solute = compound(getRandomCompound(0,0,0,0,1))
+    if givenEmpirical: solute.multCompound(random.randint(1,5))
+    sol = solution(solute, moles_solute= moles_solute, total_volume= total_volume, solvent= compound(solvent))
+
+    if givenEmpirical:
+        pComp = solute.percentComposition()
+        print("An unknown compound contains ", end = "")
+        for i in pComp: print(f"{round_sig(i[1], 4)}% {i[0]}", end = " ")
+
+    word = ["molar mass", "molecular formula"][int(givenEmpirical)]
+
+    solvent_mass = sol.solvent.getMass(sol.moles_solvent)
+    if bpOrFp: print(f"The boiling point of a molecular solvent is {miscBps.get(solvent)} and the Kb is {bpElevationConstants.get(solvent)}. If the boiling point of the solution is {round_sig(sol.boilingPoint())} when there is {sol.solute.getMass(sol.moles_solute)} g of solute in {round_sig(solvent_mass)} g of the solvent, what is the {word} of the solute?")
+    else: print(f"The freezing point of a molecular solvent is {miscFps.get(solvent)} degrees C and Kf is {fpDepressionConstants.get(solvent)}. If the freezing point of the solution is {round_sig(sol.freezingPoint())} when there is {sol.solute.getMass(sol.moles_solute)} g of solute in {round_sig(solvent_mass)} g of solvent, what is the {word} of the solute?")
+
+    if givenEmpirical: return solute.getEq()
+    else: return solute.getMass()
+
+def fiftythree(**kwargs):
+    while True:
+        cmpd = random.choice(list(solubilities))
+        temp_index  = random.randint(0,3)
+        temp = [0,20,50,100][temp_index]
+        initial_s = solubilities.get(cmpd)[temp_index]
+        if initial_s: break
+
+    final_p = random.randint(1,150) / 50
+    final_p = randPressureUnit(final_p)
+    final_s = round_sig(initial_s * final_p[2])
+
+    choices = [("final pressure", final_p[0], final_p[1]), ("final solubility", final_s, "g / 100 g H2O")]
+
+    choice = random.choice(choices)
+    choices.remove(choice)
+
+    print(f"Consider {cmpd} at {temp} degrees C. What is the {choices[0][0]} if the {choice[0]} is {choice[1]} {choice[2]}?")
+    return f"{choices[0][1]} {choices[0][2]}"
+
+def fiftyfour(**kwargs):
+    while True:
+        rx = reaction(randomRx(["double replacement", "special"]))
+        separatedCmpds = rx.formatRxList()
+        products = rx.SkeletonEquation()[1]
+        reactants = rx.SkeletonEquation()[0]
+        print(rx)
+        soluableProducts = [i for i in products if i.equation not in ["NO2", "NO", "H2O", "CO2", "NH3",]]
+        if compound("NO2") in soluableProducts: soluableProducts.remove(compound("NO2"))
+        print([i.equation for i in soluableProducts])
+        if len(soluableProducts) != 0: break
+
+
+    printStr = ["Combine ", "Decompose ", "Combust ", "Completely Combust ", "Incompletley Combust ", "Write the reaction between "]
+    if rx.typeRx in ["s1", "s2", "s3"]: printStr = printStr[0]
+    elif rx.typeRx in ["d1", "d2", "d3"]: printStr = printStr[1]
+    elif rx.typeRx == "c": printStr = printStr[2]
+    elif rx.typeRx == "complete combustion": printStr = printStr[3]
+    elif rx.typeRx == "incomplete combustion": printStr = printStr[4]
+    else: printStr = printStr[5]
+    for reactant in reactants:
+        reactantName = reactant.getNameFromEq()
+        coeffientList = rx.balanceEq()
+        if reactantName == "nitric acid":
+            if coeffientList in [[3,8,3,2,4], [8,3,3,2,4]]:
+                reactantName = "dilute nitric acid"
+            elif coeffientList in [[4,1,1,2,2], [1,4,1,2,2]]:
+                reactantName = "concentrated nitric acid"
+        printStr += reactantName + " and "
+    question = printStr[0:-5] + ". "
+    print(question, end = "")
+
+    solutions : list[solution]= []
+    minMol = 99
+    minIndex = 0
+    i = 0
+    for cmpd in reactants:
+        mol = random.randint(1,40) / 20
+        if mol < minMol: 
+            minMol = mol
+            minIndex = i
+        i += 1
+
+        molarity = random.randint(1,150) / 50
+        volume = mol / molarity
+        solutions.append(solution(cmpd, moles_solute = mol, total_volume = volume))
+    
+    for sol in solutions: print(f"You have {round_sig(sol.volume)} L of a {round_sig(sol.molarity())} M aqueous solution of {sol.solute.equation}", end = ". ")
+    finalProd = random.choice(soluableProducts)
+    for i in separatedCmpds[1]:
+        if i[0] == finalProd: prodCoeff = i[1]
+
+    minCoeff = separatedCmpds[0][minIndex][1]
+    prodMol = minMol / minCoeff * prodCoeff
+    vol = random.randint(1,150) / 50
+    prodSol = solution(finalProd, moles_solute = prodMol, total_volume= vol)
+    print(f"All of the {finalProd.equation} is moved to its own {vol} L beaker of water. What is the molarity of this solution?")    
+
+    return round_sig(prodSol.molarity())
+
+def fiftyfive(**kwargs):
+    hyd = hydrate(compound(getRandomCompound(1,0,0,0,0)).equation, random.randint(3,8))
+    t = random.randint(0,4)
+    if t == 0: # percent of one element
+        el = random.choice(hyd.percentComposition())
+        print(f"What is the percent by mass of {el[0]} in {hyd.equation}")
+        return el[1]
+    elif t == 1: # percent water
+        print(f"What percent by mass of {hyd.equation} is water?")
+        return round_sig(100 * hyd.percentWater())
+    elif t == 2: # unknown num water
+        eqToPrint = f"{hyd.anhydrous} 🞄 XH2O"
+        print(f"If the molar mass of {eqToPrint} is {hyd.getMolarMass()} g/mol, what is X?")
+        return hyd.numWater
+    elif t == 3: # unknown element
+        eqToPrint = "X" + hyd.equation[int(hyd.equation[1].islower()) + 1:]
+        print(f"If the molar mass of {eqToPrint} is {hyd.getMolarMass()} g/mol, what is X?")
+        return hyd.equation[:int(hyd.equation[1].islower()) + 1]
+    elif t == 4: # unknown element and num water
+        eqToPrint = "X" + hyd.anhydrous[int(hyd.anhydrous[1].islower()) + 1:] + " 🞄 YH2O"
+        print(f"If the molar mass of {eqToPrint} is {hyd.getMolarMass()} g/mol and the compound is {round_sig(100 * hyd.percentWater())}% water by mass, what is X and Y?")
+        return "X: " + hyd.equation[:int(hyd.equation[1].islower()) + 1] + ", Y: " + str(hyd.numWater)
+
+def fiftysix(**kwargs):
+    cmpd = compound(randCmpdForBonds())
+    print(f"Is {cmpd.getNameFromEq()} polar?")
+    return ["no", "yes"][int(cmpd.isPolar())]
+
 def polyatomicIonTest(polyatomicIonChoices):
     name = random.choice(polyatomicIonChoices)
     ion = polyatomicIons.get(name)
