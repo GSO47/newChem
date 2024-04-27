@@ -1,6 +1,7 @@
 import random, sys, io
 from chemFuncts import *
 from chemData import *
+from copy import deepcopy
 
 def one(**kwargs):
     powers = [(unit, random.randint(-2,3)) for unit in units]
@@ -1164,7 +1165,7 @@ def fortynine(**kwargs):
     
     while True:
         choices = [(f"There are {sol.moles_solute} moles of solute.", "How many moles of the solute are there?"), (f"There are {sol.moles_solvent} moles of solvent.", "How many moles of the solvent are there?"), 
-               (f"It's volume is {sol.volume} L.", "What is the total volume"), (f"Its molarity is {round_sig(sol.molarity())} M" "What is the molarity?"), 
+               (f"It's volume is {sol.volume} L.", "What is the total volume"), (f"Its molarity is {round_sig(sol.molarity())} M", "What is the molarity?"), 
                (f"Its molality is {round_sig(sol.molality())} m.", "What is the molality?"), (f"The mole fraction of the solute is {round_sig(sol.moleFractions())}.", "What is the mole fraction of the solute?"), 
                (f"The mole fraction of the solvent is {round_sig(sol.moleFractions(False))}.", "What is the mole fraction of the solvent?"), (f"The percent m/v of the solution is {round_sig(sol.pMV())}%.", "What is the percent m/v?")]
 
@@ -1399,6 +1400,63 @@ def fiftysix(**kwargs):
     cmpd = compound(randCmpdForBonds())
     print(f"Is {cmpd.getNameFromEq()} polar?")
     return ["no", "yes"][int(cmpd.isPolar())]
+
+def fiftyseven(**kwargs):
+    # determining rates from intial and final concentrations
+    C_i = random.randint(1,400) / 400
+    while (C_f := random.randint(1,400) / 400) == C_i: pass
+    t = random.randint(1,40) / 20
+    print(f"What is the rate if the concentration goes from {C_i} M to {C_f} M in {t} seconds.")
+    return round((C_i - C_f) / t, 2)
+
+def fiftyeight(**kwargs):
+    # method of initial rates
+    rx = reaction(randomRx())
+    while True:
+        reactants = rx.formatRxList()[0]
+        if rx.molecularity() == 1: 
+            rx = reaction(randomRx())
+            continue
+        break
+    print(f"Consider the following reaction and data:\n{rx}\n")
+
+    rate_orders = []
+    for _ in reactants: 
+        curr = random.randint(1,9)
+        curr = int(curr > 5) + int(curr > 1)
+        rate_orders.append(curr)
+
+    k = round_sig(random.randint(1,100) / 10 * (10 ** (random.randint(-5,5))))
+
+    # do names = [""] + names and first_ex = [1] + first_ex
+    names = ["[" + i[0].equation + "]" for i in reactants] + ["rate (mol/Ls)"]
+    first_ex = [random.randint(1,20) / 200 for _ in reactants]
+    rate_1 = k
+    for i, conc in enumerate(first_ex): rate_1 *= conc ** (rate_orders[i-1])
+    first_ex.append(round_sig(rate_1))
+    expirements = [[""] + names, [1] + first_ex]
+    used = []
+    num = 1
+    for _ in reactants:
+        while (choice := random.randint(1,len(first_ex) - 1)) in used: pass
+        used.append(choice)
+        factor = random.randint(2,4) ** (random.randint(0,1) * 2 - 1)
+        curr_ex = deepcopy(expirements[1])
+        curr_ex[choice] = round_sig(curr_ex[choice] * factor)
+        curr_ex[-1] = round_sig(curr_ex[-1] * (factor ** rate_orders[choice-1]))
+        curr_ex[0] = (num := num + 1)
+        expirements.append(curr_ex)
+
+    for i in expirements: print(i)
+    
+    rate_law = "k"
+    for i, r in enumerate(reactants): 
+        i = rate_orders[i]
+        if i != 0: rate_law += "[" + r[0].equation + "]" + str(2) * (int(i == 2))
+    
+    print("\n What is the rate law for this reaction?")
+    
+    return f"rate law: {rate_law}, k: {k}"
 
 def polyatomicIonTest(polyatomicIonChoices):
     name = random.choice(polyatomicIonChoices)

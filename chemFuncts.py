@@ -2063,7 +2063,7 @@ class reaction:
 
         return numList
     
-    def formatRxList(self):
+    def formatRxList(self) -> list[list[list[compound | int]]]:
         coeffients = self.balanceEq()
         elements = self.SkeletonEquation()
         index = 0
@@ -2095,6 +2095,15 @@ class reaction:
         except: return f"error finding the enthalpy of {self}"
 
         return react - prod
+
+    def reactants(self):
+        return self.SkeletonEquation()[0]
+
+    def products(self):
+        return self.SkeletonEquation()[1]
+    
+    def molecularity(self):
+        return len(self.SkeletonEquation()[0])
 
 class solution:
     def __init__(self, solute : compound, mass_solute : float = None, solute_density : float = 0, moles_solute : float = None, moles_solvent : float = None, total_volume : float = None, solvent : compound = compound("H2O")) -> None:
