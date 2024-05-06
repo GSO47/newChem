@@ -24,7 +24,7 @@ modeList = [
         "Solutions Unit Conversions (Aqueous)", "Solutions Unit Conversions (general)", "Colligative Properties", 
         "Molar Mass From bp/fp", "Henry's Law", "Reactions with Solubility Units", 
         "Hydrates", "Polar vs Nonpolar", "Basic Concentration",
-        "Method of Initial Rates"
+        "Method of Initial Rates", "Determining the Equilibrium Constant", "Using the Equilibrium Constant"
         ]
 
 rxType = ""

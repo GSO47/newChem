@@ -220,6 +220,31 @@ with open("miscBpsAndFps.csv") as f:
         miscFps.update({line[0] : float(line[2])})
         miscDensities.update({line[0] : float(line[3])})
 
+class thermCompound:
+    def __init__(self, el_eq : str) -> None:
+        self.phase = None
+        self.eq = el_eq.strip()
+        for phase in ["aq", "s", "l", "g"]:
+            if ("(" + phase + ")") in el_eq:
+                self.eq = el_eq.split("(" + phase + ")")[0]
+                self.phase = phase
+    
+    def __str__(self) -> str:
+        return self.eq + int(bool(self.phase)) * ( " (" + str(self.phase) + ")")
+
+    def __eq__(self, value: object) -> bool:
+        return self.eq == value.eq and self.phase == value.phase
+
+    def __hash__(self) -> int:
+        return hash((self.eq, self.phase))
+
+with open("thermoData.csv") as f:
+    file = csv.reader(f)
+    next(file)
+    thermoData = {}
+    for line in file:
+        thermoData.update({thermCompound(line[0]) : [float(line[1]), float(line[2]), float(line[3])]})
+
 nonmetalsDict = {1,2,6,7,8,9,10,15,16,17,18,34,35,36,53,54,85,86,117,118}
 semimetalsDict = {5,14,32,33,51,52,84}
 metalsDict = {i + 1 for i in range(118)} - nonmetalsDict - semimetalsDict

@@ -1180,6 +1180,12 @@ class element:
     def __str__(self) -> str:
         return f"{self.eq} {self.getCharge()}"
     
+    def getPhase(self):
+        n = self.getAtomicNumber()
+        if n in [35, 80]: return "l"
+        if n in [1, 2, 7, 8, 9, 10, 17, 18, 36, 5, 86]: return "g"
+        return "s"
+
 class compound:
     def __init__(self, compoundList = "RANDOM"):
         self.charge = 0
@@ -1532,19 +1538,6 @@ class compound:
             finalTemp = heatSupplied / (mass * sSpecificHeat) + self.temp
             self.temp = finalTemp
             return finalTemp
-        
-    def canBeGas(self):
-        for el in self.compound:
-            el = el[0]
-            el = findElement(el)
-
-            if el[4] in ["m", "tm", "s"]:
-                return False
-        
-        if "NH4" in self.equation:
-            return False
-        
-        return True
     
     def isMolecular(self):
         return getIsMolecular(self)
@@ -1723,6 +1716,9 @@ class compound:
         metal = self.compound[0][0]
         return findElement(metal)[0] in metalsDict
 
+    def isWater(self):
+        return self.equation == "H2O"
+
 class hydrate(compound):
     def __init__(self, equation : str, numWater : int):
         super().__init__(equation)
@@ -1760,6 +1756,7 @@ class reaction:
         self.typeRx = inputList[1]
         self.misc = inputList
         self.occurs = True
+        self.phases = None
 
     def __str__(self):
         coefficients = self.balanceEq()
@@ -1797,7 +1794,7 @@ class reaction:
             rxStr += cmpd.equation + " + "
         return rxStr[0:-3]
 
-    def SkeletonEquation(self):
+    def SkeletonEquation(self) -> list[list[compound]]:
         # format of output is [[reactant 1 compound,...,reactant n compound], [product 1 compound,...product n compound]]
         match self.typeRx:
             case "s1":
@@ -1946,17 +1943,17 @@ class reaction:
                 if nActivitySeries.index(nmetal2[0]) > nActivitySeries.index(nmetal1[0]):
                     self.occurs = False
                 return [[compound(cmpd), compound(nmetal1[0] + '2')], [compound(product), compound(nmetal2[0] + "2")]]
-            case "dr":
+            case "dr": # this has a ton of errors apparently
                 returnList = self.misc[2]
                 for index, product in enumerate(returnList[1]):
                     if product.equation == "NH4OH":
-                        product.pop(index)
-                        returnList[1].append(compound("NH3"))
-                        returnList[1].append(compound("H2O"))
+                        returnList.pop(index)
+                        returnList.append(compound("NH3"))
+                        returnList.append(compound("H2O"))
                     elif product.equation == "H2CO3":
-                        product.pop(index)
-                        returnList[1].append(compound("H2O"))
-                        returnList[1].append(compound("CO2"))
+                        returnList.pop(index)
+                        returnList.append(compound("H2O"))
+                        returnList.append(compound("CO2"))
                 self.occurs = False
                 for product in returnList[1]:
                     if not product.isSoluable():
@@ -2102,8 +2099,79 @@ class reaction:
     def products(self):
         return self.SkeletonEquation()[1]
     
+    def allCompounds(self) -> list[compound]:
+        reactants, products = self.SkeletonEquation()
+        return reactants + products
+
+    def generatePhases(self):
+        reactants, products = self.SkeletonEquation()
+        if len(reactants) > 2 and reactants[0].isHydroCarbon() and reactants[1].equation == "O2":
+            phases = ["g", "g"]
+            for cmpd in products:
+                if cmpd.isWater(): phases.append(random.choice(["g", "l", "l"]))
+                else: phases.append("g")
+            self.phases = phases
+            return phases
+        
+        phases = []
+        if self.typeRx == "dr":
+            for cmpd in reactants + products:
+                if cmpd.isSoluable(): phases.append("aq")
+                elif cmpd.isWater(): phases.append("l")
+                elif cmpd.isMolecular(): phases.append("g")
+                else: phases.append("s")
+            self.phases = phases
+            return phases
+
+        if self.typeRx == "sr":
+            for cmpd in reactants + products:
+                if cmpd.isElement(): phases.append(element(cmpd.equation).getPhase())
+                elif cmpd.isSoluable(): phases.append("aq")
+                else: phases.append("s")
+            self.phases = phases
+            return phases
+        
+        phase_of_other = random.choice(["s", "aq"])
+        for cmpd in reactants + products:
+            if cmpd.isDiatomic(): phases.append("g")
+            elif cmpd.isElement(): phases.append(element(cmpd.equation).getPhase())
+            elif cmpd.isMolecular(): phases.append(random.choice(["l", "g"]))
+            elif cmpd.equation == "Cu(NO3)2": phases.append("aq")
+            else: phases.append(phase_of_other)
+        self.phases = phases
+        return phases
+
     def molecularity(self):
         return len(self.SkeletonEquation()[0])
+
+    def checkRxForThermo(self):
+        if not self.occurs: return False
+        if self.phases == None: self.generatePhases()
+        for phase, cmpd in zip(self.phases, self.allCompounds()):
+            if thermoData.get(thermCompound(cmpd.equation + "(" + phase + ")")) == None: return False
+        return True
+    
+    def thermoProfile(self, choice):
+        # choice: 0 = enthalpy, 1 = gibbs, 2 = entropy
+        if not self.checkRxForThermo(): return None
+        i = 0
+        n = len(self.reactants())
+        curr = 0
+        for phase, cmpd in zip(self.phases, self.allCompounds()):
+            amount = thermoData.get(thermCompound(cmpd.equation + "(" + phase + ")"))[choice]
+            if i < n: curr -= amount
+            else: curr += amount
+            i += 1
+        return curr
+
+    def enthalpyFromThermData(self):
+        return self.thermoProfile(0)
+
+    def gibbsFromThermData(self):
+        return self.thermoProfile(1)
+
+    def entropyFromThermData(self):
+        return self.thermoProfile(2)
 
 class solution:
     def __init__(self, solute : compound, mass_solute : float = None, solute_density : float = 0, moles_solute : float = None, moles_solvent : float = None, total_volume : float = None, solvent : compound = compound("H2O")) -> None:
@@ -2683,13 +2751,9 @@ def getCounterpart(eq : str):
 
 counterpart_starters = ["CO2", "SO2", "H2O", "I3", "SO3", "NH3", "ClF3", "CCl4", "SF4", "XeF4", "PCl5", "ClF5", "SF6"]
 
-if __name__ == "__main__":  
-    for i in counterpart_starters:
-        counterpart = getCounterpart(i)
-        cmpd = compound(counterpart)
-        print(print_matrix(cmpd.covalentBonds()))
-        print(cmpd.VESPR())
-        print()
-
+if __name__ == "__main__":
+    for i in range(10):
+        while not (rx := reaction(randomRx())).checkRxForThermo(): pass
+        print(rx)
 # counterpart stuff is WIP
 

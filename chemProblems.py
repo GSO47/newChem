@@ -777,7 +777,7 @@ def twentyone(rxType, **kwargs):
         #print(leftoverMoles)
 
         # gas laws stuff (calculating volume)
-        gasses = [cmpd[0].canBeGas() for cmpd in cmpds]
+        gasses = [cmpd[0].isMolecular() for cmpd in cmpds]
 
         if not any(gasses):
             #print("fail")
