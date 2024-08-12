@@ -51,6 +51,7 @@ units = ["m", "g", "s"]
 with open('periodicTable.csv') as csv_file:
     csv_reader = csv.reader(csv_file)
     elements = ["n/a"]
+    neutronList = ["n/a"]
     next(csv_reader)
     for line in csv_reader:
         toAppend = [line[0], line[1], line[2]]
@@ -84,6 +85,7 @@ with open('periodicTable.csv') as csv_file:
         toAppend.append(line[17])
         toAppend.append(line[3])
         elements.append(toAppend)
+        neutronList.append(int(line[4]))
 
 tmcharges = {
     "Cr" : [2,3],
@@ -245,6 +247,31 @@ with open("thermoData.csv") as f:
     for line in file:
         thermoData.update({thermCompound(line[0]) : [float(line[1]), float(line[2]), float(line[3])]})
 
+with open("KaTable.csv") as f:
+    file = csv.reader(f)
+    next(file)
+    KaDict = {}
+    for line in file: 
+        if line[1] != "LARGE": value = float(line[1])
+        else: value = "LARGE"
+        KaDict.update({line[0] : value})
+
+with open("KbTable.csv") as f:
+    file = csv.reader(f)
+    next(file)
+    KbDict = {}
+    for line in file: 
+        if line[1] != "LARGE": value = float(line[1])
+        else: value = "LARGE"
+        KbDict.update({line[0] : value})
+
+with open("KspTable.csv") as f:
+    file = csv.reader(f)
+    next(file)
+    KspDict = {}
+    for line in file:
+        KspDict.update({line[1] : float(line[2])})
+
 nonmetalsDict = {1,2,6,7,8,9,10,15,16,17,18,34,35,36,53,54,85,86,117,118}
 semimetalsDict = {5,14,32,33,51,52,84}
 metalsDict = {i + 1 for i in range(118)} - nonmetalsDict - semimetalsDict
@@ -255,3 +282,5 @@ c = 3e8 # Speed of Light, m/s
 h = 6.626e-34 # Planck Constant, Js
 k = 2.178e-18 # Boltzman Constant, J (used for Bohr's Law)
 eMass = 9.11e-31 # Mass of an electron, kg
+F = 96485 # Faraday's Constant C / e- mol
+

@@ -1,4 +1,4 @@
-import random, math, sympy as sp
+import random, math, sympy as sp, numpy as np
 from chemData import *
 
 def getAnswer(answer):
@@ -12,7 +12,6 @@ chanceList = [3,3,3,1,0]
 #chanceList = [0,0,0,0,1]
 
 def getRandomCompound(polyChance=chanceList[0], acidChance=chanceList[1], biChance=chanceList[2], diChance = chanceList[3], hChance = chanceList[4]):
-    
     chanceList = []
     p = 0
     a = 0
@@ -487,7 +486,7 @@ def findCharge(el):
         group = el[3]
         charge = int(group[0])
         if charge > 4 and charge != 8:
-            charge = 8- charge
+            charge = 8 - charge
     else:
         tmChoices = []
         for i in tmNames:
@@ -1187,8 +1186,9 @@ class element:
         return "s"
 
 class compound:
-    def __init__(self, compoundList = "RANDOM"):
-        self.charge = 0
+    def __init__(self, compoundList = "RANDOM", charge = 0):
+        self.charge = charge
+        self.K_sp = None
         if compoundList == "RANDOM": compoundList = getRandomCompound()
         if type(compoundList) == list:
             self.name = compoundList[0]
@@ -1196,6 +1196,9 @@ class compound:
             try: self.type = compoundList[2]
             except IndexError: self.type = "n/a"
         elif type(compoundList) == str:
+            if "_" in compoundList:
+                compoundList, self.charge = compoundList.split("_")
+                self.charge = int(self.charge)
             if compoundList[-1] == "-": 
                 self.charge = -1
                 compoundList = compoundList[:-1]
@@ -1227,7 +1230,10 @@ class compound:
         self.temp = 0
 
     def __str__(self):
-        return f"name: {self.name}\nEq: {self.equation}\ntype: {self.type}\nElements: {self.compound}"
+        return self.__repr__()
+
+    def __repr__(self):
+        return self.equation + ("_" + str(self.charge)) * (self.charge != 0)
 
     def getEq(self): # why did i even make this method?!
         eq = ""
@@ -1540,7 +1546,11 @@ class compound:
             return finalTemp
     
     def isMolecular(self):
-        return getIsMolecular(self)
+        for el in self.compound:
+            el = findElement(el[0])
+            if el[4] != "n": return False
+
+        return "NH4" not in self.equation
     
     def isDiatomic(self):
         return self.equation in ["H2", "N2", "O2", "F2", "Cl2", "Br2", "I2"]
@@ -1564,10 +1574,13 @@ class compound:
         if "O2" not in self.equation or not self.isIonic(): return False
         if "(O2)" in self.equation: return True
         if len(self.uniqueEls()) != 2: return False
-        el1 = self.compound[0][0]
-        if findElement(el1)[0] not in [4, 12, 20, 38, 56, 88]: return False
+        metal = findElement(self.compound[0][0])
 
-        return True
+        charge = metal[3]
+        if charge[-1] == "b": return False # i dont even want to deal with this
+        else: charge = int(charge[0])
+
+        nmCharge = charge
 
     def isElement(self):
         return all([i.islower() and not i.isdigit() for i in self.equation[1:]])
@@ -1714,10 +1727,95 @@ class compound:
 
     def isIonic(self):
         metal = self.compound[0][0]
-        return findElement(metal)[0] in metalsDict
+        return int(findElement(metal)[0]) in metalsDict
 
     def isWater(self):
         return self.equation == "H2O"
+
+    def isAqOrGas(self): 
+        return self.isMolecular() or self.isIonic() or self.isElement()
+
+    def gen_K_sp(self):
+        Ksp = KspDict.get(self.equation)
+        if Ksp == None: return random.choice(list(KspDict.values()))
+
+        return Ksp
+    
+    def solubility_rx(self, mConc = 0, nConc = 0):
+        if self.K_sp == None: self.K_sp = self.gen_K_sp()
+        try:
+            m, nm = ionizeTernaryIonic(self.equation)
+            m = m[0] + "_" + str(m[1])
+            nm = nm[0] + "_-" + str(nm[1])
+        except:
+            if "(NH4)" in self.equation:
+                m = ["NH4", 1]
+                nm = [self.equation[6:], int(self.equation[5])]
+            elif "NH4" in self.equation:
+                m = ["NH4", 1]
+                nm = [self.equation[3:], 1]
+            elif len(self.compoundDict) == 2:
+                nm = list(self.compoundDict.keys())[1]
+                nmCharge = int(findElement(nm)[3][0])
+                nmCharge = min(4, nmCharge) + int(nmCharge > 4) * (4 - nmCharge)
+                nm += "_-" + str(nmCharge)
+
+                mCharge = nmCharge * self.compound[1][1] / self.compound[0][1]
+                m = self.compound[0][0] + "_" + str(int(mCharge))
+            # raise Exception(f"only input ternary ionic compounds, {self} is not valid")
+        return reaction(["s", [self], [compound(m), compound(nm)], [self.K_sp, mConc, nConc]])
+
+    # cant handle peroxides
+    def oxidation_numbers(self) -> dict[str, int]:
+        if len(self.compound) == 1: return {self.compound[0][0] : self.charge}
+        oxiList = dict.fromkeys(self.compoundDict.keys(), 0)
+
+        try:
+            metal, polyatomicIon = ionizeTernaryIonic(self.equation)
+            oxiList[metal[0]] = metal[1]
+            polyatomicIon[1] = str(-polyatomicIon[1])
+            oxiPoly = compound("_".join(polyatomicIon)).oxidation_numbers()
+            return oxiList | oxiPoly
+        except: pass
+
+        if oxiList.get("F") != None: 
+            oxiList["F"] = -1 * self.compoundDict["F"]
+
+            if oxiList.get("O") != None: oxiList["O"] = 2 * self.compoundDict["O"]
+        elif oxiList.get("O") != None: oxiList["O"] = -2 * self.compoundDict["O"]
+
+        elementsInCmpd = list(oxiList.keys())
+
+        metal = findElement(elementsInCmpd[0])
+
+        if metal[3] in ["1a", "2a"]: oxiList[metal[2]] = int(metal[3][0]) * self.compoundDict[metal[2]]
+
+        if elementsInCmpd[0] == "H": oxiList["H"] = self.compoundDict["H"]
+        elif oxiList.get("H") != None: oxiList["H"] = -self.compoundDict["H"]
+
+        oxiSum = sum(list(oxiList.values()))
+        try: zero_index = list(oxiList.values()).index(0)
+        except: zero_index = 0
+
+        oxiList[elementsInCmpd[zero_index]] += self.charge - oxiSum
+
+        for el in oxiList: oxiList[el] = int(oxiList[el] / self.compoundDict[el])
+
+        # deals with when oxiList is (0,0) (binary compounds) (might cause errors?)
+        if len(oxiList) == 2 and list(oxiList.values()) == [0,0]:
+            if self.isIonic():
+                nmCharge = findCharge(self.compound[1][0])
+                mCharge = self.compound[1][1] * (self.compound[0][1] / nmCharge)
+                oxiList[self.compound[0][0]] = mCharge
+                oxiList[self.compound[1][0]] = nmCharge
+            else:
+                c1 = findCharge(self.compound[0][0])
+                c2 = findCharge(self.compound[1][0])
+                c = math.gcd(c1, c2)
+                oxiList[self.compound[0][0]] = c2 / c
+                oxiList[self.compound[1][0]] = -c1 / c
+
+        return oxiList
 
 class hydrate(compound):
     def __init__(self, equation : str, numWater : int):
@@ -1750,13 +1848,93 @@ class hydrate(compound):
         return self.numWater * 18 / self.getMolarMass()
 
 class reaction:
-    def __init__(self, inputList):
-        self.reactantList = inputList[0]
-        # never change the order of reactantList
-        self.typeRx = inputList[1]
-        self.misc = inputList
-        self.occurs = True
+    def __init__(self, inputList, eqChoice = "NONE", waterAsGas = False):
         self.phases = None
+        self.K_eq = None
+        self.reactantList = None
+        self.typeRx = None
+        self.misc = None
+        self.occurs = True
+
+        if inputList == "eq":
+            solid_index = []
+            n = random.randint(2,5)
+            options = [
+                [["NOCl"], ["NO", "Cl2"]],
+                [["H2", "CO2"], ["H2O", "CO"]],
+                [["N2", "O2"], ["NO"]],
+                [["N2", "O2"], ["NO2"]],
+                [["C", "O2"], ["CO"]],
+                [["C", "O2"], ["CO2"]],
+                [["H2", f"C{n}H{2*n-2}"], [f"C{n}H{2*n}"]],
+                [["H2", f"C{n}H{2*n-2}"], [f"C{n}H{2*n+2}"]],
+                [["H2", f"C{n}H{2*n}"], [f"C{n}H{2*n+2}"]]
+            ]
+            i = eqChoice if eqChoice != "NONE" and eqChoice in range(0,12) else random.randint(0,11)
+            if i < 9: 
+                rx = options[i]
+                if rx[0][0] == "C": solid_index = [0]
+            elif i == 9:
+                hOne, hTwo = random.sample(["H", "Cl", "Br", "I", "F"], 2)
+                rx = [[hOne + "2", hTwo + "2"], [hOne + hTwo]]
+            else:
+                ones = [3,11,19,37,55]
+                one = bool(random.getrandbits(1))
+                if one: 
+                    m = elements[random.choice(ones)][2]
+                    rx = [[f"{m}2O", "H2"], [m, "H2O"]]
+                else: 
+                    m = elements[random.choice([i + 1 for i in ones])][2]
+                    rx = [[f"{m}O", "H2"], [m, "H2O"]]
+
+                solid_index = [0,2]
+
+            # switch the order half the time
+            switchOrder = random.getrandbits(1)
+            if switchOrder: 
+                rx[0], rx[1] = rx[1], rx[0]
+                if solid_index == [0]: solid_index = [1]
+
+            self.reactantList, self.misc = [[compound(i) for i in react] for react in rx]
+            if waterAsGas: self.phases = ["g" for _ in rx[0] + rx[1]]
+            else: self.phases = ["g" if not i == "H2O" else random.choice(["l", "g"]) for i in rx[0] + rx[1]]
+            for s in solid_index:
+                self.phases[s] = "s"
+            self.typeRx = "eq"
+            power_of_K = random.randint(5,12) * (-1) ** random.randint(0,1)
+            K_eq = random.random() * 10 ** power_of_K
+            self.generateEqConcs(K_eq)
+
+            self.typeRx = "eq"
+        elif inputList[0] in ["a", "b", "ab"]:
+            self.typeRx = inputList[0]
+            self.reactantList = inputList[1]
+            self.misc = inputList[2]
+
+            self.phases = ["l" if i.equation == "H2O" else "aq" for i in self.reactantList + self.misc]
+
+            self.K_eq = inputList[3][1]
+            self.reactEqConcs = [inputList[3][0]]
+            self.prodEqConcs = [0,0]
+            self.eqConcsFromIntial([0, 0], [inputList[3][0]])
+        elif inputList[0] == "n":
+            self.typeRx = inputList[0]
+            self.reactantList = inputList[1]
+            self.misc = inputList[2]
+        elif inputList[0] == "s":
+            self.typeRx = inputList[0]
+            self.reactantList = inputList[1]
+            self.misc = inputList[2]
+            self.phases = ["s", "aq", "aq"]
+            self.K_eq = inputList[3][0]
+            self.reactEqConcs = []
+            self.prodEqConcs = [inputList[3][1], inputList[3][2]]
+            self.eqConcsFromIntial()
+        else:       
+            self.reactantList = inputList[0]
+            # never change the order of reactantList
+            self.typeRx = inputList[1]
+            self.misc = inputList
 
     def __str__(self):
         coefficients = self.balanceEq()
@@ -1765,7 +1943,7 @@ class reaction:
         for i, cmpd in enumerate(skeleton[0]):
             if coefficients[i] == 1: coefficient = ""
             else: coefficient = coefficients[i]
-            rxStr += str(coefficient) + cmpd.equation + " + "
+            rxStr += str(coefficient) + str(cmpd) + " + "
         rxStr = rxStr[:-3]
         if self.typeRx == "d": rxStr += "--Δ-->"
         else: rxStr += "----->"
@@ -1776,7 +1954,7 @@ class reaction:
                     else: 
                         coefficient = coefficients[i + len(skeleton[0])]
                 except IndexError: pass 
-                rxStr += str(coefficient) + cmpd.equation + " + "
+                rxStr += str(coefficient) + str(cmpd) + " + "
             rxStr = rxStr[0:-3]
             if self.typeRx == "dr" and not self.occurs: rxStr += "\nDR/NR"
         else: rxStr += "SR/NR"
@@ -1788,11 +1966,23 @@ class reaction:
         rxStr = ""
         for cmpd in skeleton[0]:
             rxStr += cmpd.equation + " + "
-        if self.typeRx == "d": rxStr += "--Δ--> "
-        else: rxStr += "-----> "
+        rxStr = rxStr[0:-3]
+        if self.typeRx == "d": rxStr += " -Δ-> "
+        else: rxStr += " ---> "
         for cmpd in skeleton[1]:
             rxStr += cmpd.equation + " + "
         return rxStr[0:-3]
+
+    def phaseStr(self):
+        if self.phases == None: return str(self)
+        reactants, products = self.formatRxList()
+        index = -1 # := increments on the first iteration
+        rx_str = ""
+        
+        for reactant in reactants: rx_str += f"{reactant[1] if reactant[1] != 1 else ''}{reactant[0].__repr__()}({self.phases[(index := index + 1)]}) + "
+        rx_str = rx_str[:-3] + "-->"
+        for product in products: rx_str += f"{product[1] if product[1] != 1 else ''}{product[0].__repr__()}({self.phases[(index := index + 1)]}) + "
+        return rx_str[:-3]
 
     def SkeletonEquation(self) -> list[list[compound]]:
         # format of output is [[reactant 1 compound,...,reactant n compound], [product 1 compound,...product n compound]]
@@ -1973,13 +2163,16 @@ class reaction:
                     else: products = [compound(reactants[0].equation + reactants[1].equation)]
                 
                 return [reactants, products]
+            case "eq" | "ab" | "a" | "b" | "n" | "s":
+                return [self.reactantList, self.misc]
+            case _: print(self.typeRx)
 
     def balanceEq(self):
         rpList = self.SkeletonEquation()
         try: rList = rpList[0]
         except: 
-            print(self.misc)
-            raise Exception("bad skeleton equation")
+            print([str(i) for i in self.misc])
+            raise Exception("bad skeleton equation: " + str(rpList))
         pList = rpList[1]
         relList = []
         # for single elements, the format is [El, 1]
@@ -2054,7 +2247,7 @@ class reaction:
 
         numList = [int(i) for i in numList if int(i) != 0]
 
-        l = len(rpList)
+        l = len([i for sublist in rpList for i in sublist])
         while len(numList) < l:
             numList.append(1)
 
@@ -2063,6 +2256,7 @@ class reaction:
     def formatRxList(self) -> list[list[list[compound | int]]]:
         coeffients = self.balanceEq()
         elements = self.SkeletonEquation()
+
         index = 0
         reactList = []
         for i in elements[0]:
@@ -2173,11 +2367,127 @@ class reaction:
     def entropyFromThermData(self):
         return self.thermoProfile(2)
 
+    def generateEqConcs(self, K_eq = None):
+        prod_eq, react_eq = self.eqExpression()
+        if K_eq == None:
+            self.prodEqConcs = [random.randint(1,50000) / 10000 for _ in prod_eq]
+            self.reactEqConcs = [random.randint(1,50000) / 10000 for _ in react_eq]
+            self.K_eq = 1
+            for expression, conc in zip(prod_eq, self.prodEqConcs): self.K_eq *= conc ** expression[1]
+            for expression, conc in zip(react_eq, self.reactEqConcs): self.K_eq /= conc ** expression[1]
+            self.K_eq = round_sig(self.K_eq, 6)
+        else:
+            self.K_eq = K_eq
+            n = len(prod_eq)
+            self.prodEqConcs = [K_eq ** (1/n) for _ in prod_eq]
+            self.reactEqConcs = [1 for _ in react_eq]
+            if any([i > 100 for i in self.prodEqConcs + self.reactEqConcs]):
+                n = len(react_eq)
+                self.reactEqConcs = [K_eq ** (-1/n) for _ in react_eq]
+                self.prodEqConcs = [1 for _ in prod_eq]
+
+    def eqExpressionStr(self):
+        if self.phases == None: raise Exception("Must define phases!")
+        reactants, products = self.formatRxList()
+        index = -1
+        reacts = [f"[{cmpd.equation}]" + (f"^{coeff}" if coeff != 1 else "") for cmpd, coeff in reactants if self.phases[index := index + 1] in ["g","aq"]]
+        prods = [f"[{cmpd.equation}]" + (f"^{coeff}" if coeff != 1 else "") for cmpd, coeff in products if self.phases[index := index + 1] in ["g","aq"]]
+        if prods == []: prods = ["1"]
+        if reacts == []: return "".join(prods)
+        return "".join(prods) + "/" + "".join(reacts)
+    
+    def eqExpression(self):
+        if self.phases == None: raise Exception("Must define phases!")
+        reactants, products = self.formatRxList()
+        index = -1
+        reacts = [[cmpd, coeff] for cmpd, coeff in reactants if self.phases[index := index + 1] in ["g","aq"]]
+        prods = [[cmpd, coeff] for cmpd, coeff in products if self.phases[index := index + 1] in ["g","aq"]]
+        return [prods, reacts]
+
+    def reactionQuotient(self, prodConc = None, reactConc = None):
+        if prodConc == None: prodConc = self.prodEqConcs
+        if reactConc == None: reactConc = self.reactEqConcs
+
+        prodEq, reactEq = self.eqExpression()
+
+        prodConc = [i + 1e-200 for i in prodConc]
+        reactConc = [i + 1e-200 for i in reactConc]
+
+        Q = 1
+        for conc, coeff in zip(prodConc, prodEq): Q *= conc ** coeff[1]
+        try:
+            for conc, coeff in zip(reactConc, reactEq): Q /= conc ** coeff[1]
+        except:
+
+            return float('inf')
+
+        return Q
+
+    def eqConcsFromMissing(self, newProd : list[int], newReact : list[int]):
+        if len(newProd) != len(self.prodEqConcs) or len(newReact) != len(self.reactEqConcs): raise Exception("Invalid equilbrium inputs")
+        if "X" in newProd: blankIndex = 2 * newProd.index("X")
+        elif "X" in newReact: blankIndex = 2 * newReact.index("X") + 1
+        else: raise Exception("Must include unknown X in lists")
+        eqExpression = self.eqExpression()
+
+        curr_K = 1
+        for i, expression in zip(newProd, eqExpression[0]):
+            if i != "X": curr_K *= i ** expression[1]
+        for i, expression in zip(newReact, eqExpression[1]):
+            if i != "X": curr_K /= i ** expression[1]
+
+        if blankIndex % 2 == 0: newProd[blankIndex // 2] = (self.K_eq / curr_K) ** (1/eqExpression[blankIndex % 2][blankIndex // 2][1])
+        else: newReact[blankIndex // 2] = (self.K_eq / curr_K) ** (-1/eqExpression[blankIndex % 2][blankIndex // 2][1])
+        
+        self.reactEqConcs = newReact
+        self.prodEqConcs = newProd
+
+    def eqConcsFromIntial(self, newProd : list[int] = None, newReact : list[int] = None):
+        if  not newProd: 
+            newProd = self.prodEqConcs
+        if not newReact: 
+            newReact = self.reactEqConcs
+        if len(newProd) != len(self.prodEqConcs) or len(newReact) != len(self.reactEqConcs): raise Exception("Invalid equilbrium inputs")
+        prodEq, reactEq = self.eqExpression()
+                
+        rQuotient = self.reactionQuotient(newProd, newReact)
+        pError = abs((rQuotient - self.K_eq) / self.K_eq)
+
+        if pError < .05:
+            self.prodEqConcs = newProd
+            self.reactEqConcs = newReact
+
+            return None
+
+        towardsProducts = 2 * int(self.K_eq > rQuotient) - 1
+        # 1 if it is towards the products, -1 if it is towards the reactants
+
+        prodRoots = [[-1 * towardsProducts * initConc / stoicRatio[1]] * stoicRatio[1] for initConc, stoicRatio in zip(newProd, prodEq)]
+        reactRoots = [[towardsProducts * initConc / stoicRatio[1]] * stoicRatio[1] for initConc, stoicRatio in zip(newReact, reactEq)]
+        prodRoots = sum(prodRoots, []) # flattens list
+        reactRoots = sum(reactRoots, []) # flattens list
+
+        if prodRoots == []: prodPoly = np.polynomial.Polynomial([1])
+        else: prodPoly = np.polynomial.polynomial.Polynomial.fromroots(prodRoots)
+        if reactRoots == []: reactPoly = np.polynomial.Polynomial([1])
+        else: reactPoly = np.polynomial.polynomial.Polynomial.fromroots(reactRoots)
+
+        for stoicRatio in prodEq: prodPoly *= (towardsProducts * stoicRatio[1]) ** stoicRatio[1]
+        for stoicRatio in reactEq: reactPoly *= (-towardsProducts * stoicRatio[1]) ** stoicRatio[1]
+
+        eqPoly = prodPoly - reactPoly * self.K_eq
+
+        roots = list(filter(lambda x : np.imag(x) < 1e-3 and x >= 0, eqPoly.roots()))
+
+        d = min(np.real(roots))
+        self.prodEqConcs = [initConc + towardsProducts * stoicRatio[1] * d for initConc, stoicRatio in zip(newProd, prodEq)]
+        self.reactEqConcs = [initConc - towardsProducts * stoicRatio[1] * d for initConc, stoicRatio in zip(newReact, reactEq)]
+
 class solution:
     def __init__(self, solute : compound, mass_solute : float = None, solute_density : float = 0, moles_solute : float = None, moles_solvent : float = None, total_volume : float = None, solvent : compound = compound("H2O")) -> None:
         # solute density in g/mL, mass solute in g, moles solute and moles solvent in mol, total volume in L
         # if solute density is 0, then we ignore the solute's mass for stuff
-        # if solute density is None, then the code tries to find the density (if it can't, it randomly generates is [.5,3.5])
+        # if solute density is None, then the code tries to find the density (if it can't, it randomly generates it in [.5,3.5])
 
         self.solute = solute
         self.solvent = solvent
@@ -2317,12 +2627,162 @@ class solution:
             n /= commonFactor
             return int(m + n)
 
-def getIsMolecular(cmpd : compound):
-    for el in cmpd.compound:
-        el = findElement(el[0])
-        if el[4] != "n": return False
+class AB_blueprint:
+    def __init__(self, moles = None, volume = 1, molarity = 1):
+        self.acid = compound("H2O")
+        self.base = compound("H2O")
+        self.c_acid = compound("H3O_1")
+        self.c_base = compound("OH_-1")
 
-    return "NH4" not in cmpd.equation
+        if moles: self.molarity = moles / volume
+        else: self.molarity = molarity
+
+        self.volume = volume
+        self.K_eq = "LARGE"
+
+        self.bl_rx : reaction = None
+
+        self.eq = "H2O"
+
+    def HConc(self):
+        return self.bl_rx.prodEqConcs[0]
+    
+    def pH(self):
+        return -1 * math.log10(self.HConc())
+
+    def pOH(self):
+        return 14 - self.pH()
+    
+    def OHConc(self):
+        return (10 ** -14) / (self.HConc())
+
+    def addCommonIon(self, added_molarity):
+        prod_eq, _ = self.bl_rx.eqExpression()
+        common_ion_index = 0
+        if prod_eq[0][0].equation in ["OH_-1", "H3O_1", "H_1", "H3O_+1", "H_+1"]: common_ion_index = 1
+
+        newProdConcs = self.bl_rx.prodEqConcs
+        newProdConcs[common_ion_index] += added_molarity
+
+        self.bl_rx.eqConcsFromIntial(newProdConcs, [self.molarity])
+
+    def moles(self):
+        return self.molarity * self.volume
+    
+    def __str__(self) -> str:
+        return f"{round_sig(self.volume)} L of {round_sig(self.molarity)} M {self.eq}"
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
+class acid(AB_blueprint):
+    def __init__(self, acid_eq =None, moles=None, volume=1, molarity=1):
+        super().__init__(moles, volume, molarity)
+
+        if "_" in acid_eq: eq, charge = acid_eq.split("_")
+        else: eq, charge = acid_eq, 0
+        
+        self.acid = compound(eq, charge)
+        self.base = compound("H2O")
+        self.c_acid = compound("H3O", 1)
+        
+        c_base = list(self.acid.equation)
+        if c_base[1].isnumeric():
+            c_base[1] = str(int(c_base[1]) - 1)
+            if c_base[1] == "1": c_base[1] = ""
+        else: c_base = c_base[1:]
+
+        self.c_base = compound("".join(c_base), int(self.acid.charge) - 1)
+
+        self.K_eq = KaDict[eq+("_"+str(charge)) * (charge != 0)]
+        if self.K_eq == "LARGE": self.K_eq = 9e200
+
+        self.bl_rx = reaction(["a", [self.acid, self.base], [self.c_acid, self.c_base], [self.molarity, self.K_eq]])
+        self.eq = self.acid.__repr__()
+
+class base(AB_blueprint):
+    def __init__(self, base_eq = None, moles=None, volume=1, molarity=1):
+        super().__init__(moles, volume, molarity)
+
+        self.base = compound(base_eq)
+        self.acid = compound("H", 1)
+        self.c_base = compound("OH", -1)
+        
+        if "(OH)2" in base_eq: c_acid = base_eq[:2] + "_+2"
+        elif "OH" in base_eq: c_acid = base_eq[:-2] + "_+1"
+        else:
+            if base_eq[-1] == "H": c_acid = base_eq + "2_+1"
+            if base_eq[-2] == "H": c_acid = base_eq[:-1] + str(int(base_eq[-1]) + 1) + "_+1"
+            else: c_acid = base_eq + "H_+1"
+        
+        self.c_acid = compound(c_acid)
+
+        self.K_eq = KbDict[base_eq]
+        if self.K_eq == "LARGE": self.K_eq = 9e200
+
+        self.bl_rx = reaction(["b", [self.base], [self.c_base, self.c_acid], [self.molarity, self.K_eq]])
+        self.eq = self.base.__repr__()
+
+def ionize_ab(cmpd : compound):
+    # returns non H+ or OH- ion in a compound, given that it is an acid or base
+    eq = cmpd.equation
+
+    if eq[0] == "H":
+        charge = eq[1]
+        if eq[1].isdigit(): charge = int(charge)
+        else: charge = 1
+
+        return [eq[1 + eq[1].isdigit():], charge]
+    
+    if eq[-2:] == "OH": return [eq[:-2], 1]
+    if eq[-5:-1] == "(OH)": return [eq[:-5], int(eq[-1])]
+
+    raise Exception(f"invalid acid or base: {cmpd}")
+
+# this has an error with computing the leftover moles and salt moles
+class neutralization(reaction):
+    def __init__(self, acidInput : acid, baseInput : base):
+        self.acid = acidInput
+        self.base = baseInput
+        self.totVol = self.acid.volume + self.base.volume
+        acidIon = ionize_ab(self.acid.acid)
+        baseIon = ionize_ab(self.base.base)
+        self.salt = compound(ionicCompoundFromElements(m = baseIon, n = acidIon))
+        super().__init__(["n", [self.acid.acid, self.base.base], [self.salt, compound("H2O")]])
+        # acid + base -> salt + H2O
+        # this part only works for strong acids and bases
+        reacts, prods = self.formatRxList()
+        leftover_moles = self.acid.moles() / reacts[0][1] - self.base.moles() / reacts[1][1]
+
+        if leftover_moles >= 0: # base is limiting or stoiciometric mixture
+            self.leftover_ab = acid(self.acid.acid.equation, moles = leftover_moles, volume = self.totVol)
+            self.salt_moles = prods[0][1] * self.base.moles() / reacts[1][1]
+        else: # acid is limiting
+            self.leftover_ab = base(self.base.base.equation, moles = -leftover_moles, volume = self.totVol)
+            self.salt_moles = prods[0][1] * self.acid.moles() / reacts[0][1]
+
+# honestly i may just skip this part
+class half_reaction(reaction):
+    def __init__(self, init_cmpd : compound, final_cmpd : compound):
+        rList = [init_cmpd]
+        pList = [final_cmpd]
+
+        r_counts = {"O" : 0, "H" : 0, "e-": init_cmpd.charge}
+        oCount = init_cmpd.compoundDict.get("O")
+        if oCount != None: r_counts["O"] = oCount
+        hCount = init_cmpd.compoundDict.get("H")
+        if hCount != None: r_counts["H"] = hCount
+
+        p_counts = {"O" : 0, "H" : 0, "e-": final_cmpd.charge}
+        oCount = final_cmpd.compoundDict.get("O")
+        if oCount != None: p_counts["O"] = oCount
+        hCount = final_cmpd.compoundDict.get("H")
+        if hCount != None: p_counts["H"] = hCount
+
+        if p_counts["O"] < r_counts["O"]: pList.append(compound("H2O"))
+        elif p_counts["O"] > r_counts["O"]: rList.append(compound("H2O"))
+
+        super().__init__(inputList)
 
 boxSize = 9
 
@@ -2751,9 +3211,5 @@ def getCounterpart(eq : str):
 
 counterpart_starters = ["CO2", "SO2", "H2O", "I3", "SO3", "NH3", "ClF3", "CCl4", "SF4", "XeF4", "PCl5", "ClF5", "SF6"]
 
-if __name__ == "__main__":
-    for i in range(10):
-        while not (rx := reaction(randomRx())).checkRxForThermo(): pass
-        print(rx)
 # counterpart stuff is WIP
 

@@ -1,28 +1,40 @@
-def atomsInCompound(equation : str):
-    if len(equation) == 0: return {}
-    if checkLast(equation): return {equation : 1}
-    if equation[-1].isnumeric() and checkLast(equation[:-1]): return {equation[:-1] : int(equation[-1])}
-    if equation[0] == "(":
-        factor = int(equation[-1])
-        inside = atomsInCompound(equation[1:-2])
-        for key in inside: inside[key] *= factor
-        return inside
+from chemFuncts import reaction
+from random import randint
 
-    index = int(equation[1].islower())
-    num = equation[index+1]
-    num = 1 if not num.isnumeric() else int(num)
+def percentError(new, orig):
+    return abs((new - orig) / orig)
 
-    ret = {equation[0:index + 1] : num}
-    next_batch = atomsInCompound(equation[index + 2 - int(num == 1):])
-    to_delete = []
-    for key in next_batch:
-        if key in ret: 
-            to_delete.append(key)
-            ret[key] += next_batch[key]
-    for i in to_delete: del next_batch[i]
-    ret.update(next_batch)
-    return ret
+numTests = 10000
+numComplexDelta = 0
+numSuccess = 0
 
-def checkLast(equation : str): return len(equation) == 1 or (equation[-1].islower() and len(equation) == 2)
+pList = []
 
-print(atomsInCompound("Cr2(Cr2O7)3"))
+for _ in range(numTests):
+    rx = reaction("eq")
+
+    newProd = [randint(0,40) / 20 + .5 for _ in rx.prodEqConcs]
+    newReact = [randint(0,40) / 20 + .5 for _ in rx.reactEqConcs]
+
+    # print(newProd)
+    # print(newReact)
+
+    rx.eqConcsFromIntial(newProd, newReact)
+    
+    pError = percentError(rx.reactionQuotient(), rx.K_eq)
+    pList.append(pError)
+    if pError < .01 and all([c > 0 for c in rx.prodEqConcs + rx.reactEqConcs]): 
+        numSuccess += 1
+    else:
+        print(rx.K_eq)
+        print(rx.phaseStr())
+        print(pError)
+        print(f"prod: {rx.prodEqConcs}")
+        print(f"react: {rx.reactEqConcs}")
+        print()
+        pass
+
+print(f"success rate: {numSuccess / numTests * 100}%")
+print(f"error rate: {numComplexDelta / numTests * 100}%")
+print(f"max error: {max(pList)}")
+

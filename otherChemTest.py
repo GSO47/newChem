@@ -1,9 +1,10 @@
-from sympy import Matrix
-from pprint import pprint
+from chemFuncts import acid, base, neutralization, compound
 
-p = Matrix([[-1/4,1/4], [9/8,-5/8]])
-p_inv = p.inv()
-A = Matrix([[0,2],[1,-1]])
+cmpd = compound("CdF2")
+s_rx = cmpd.solubility_rx(mConc= 1)
 
-pprint(p_inv * A * p)
-v = Matrix([2,-5])
+print(s_rx.phaseStr())
+print(s_rx.K_eq)
+print(s_rx.eqExpression())
+print(s_rx.reactEqConcs)
+print(s_rx.prodEqConcs)

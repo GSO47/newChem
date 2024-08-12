@@ -24,7 +24,11 @@ modeList = [
         "Solutions Unit Conversions (Aqueous)", "Solutions Unit Conversions (general)", "Colligative Properties", 
         "Molar Mass From bp/fp", "Henry's Law", "Reactions with Solubility Units", 
         "Hydrates", "Polar vs Nonpolar", "Basic Concentration",
-        "Method of Initial Rates", "Determining the Equilibrium Constant", "Using the Equilibrium Constant"
+        "Method of Initial Rates", "Determining the Equilibrium Constant", "Missing Equilibrium Concentration",
+        "Calculating K_eq", "Calculating Equilibrium Concentrations from Initial", "pH Conversions",
+        "pH from Molarity", "pH with Common Ion Effect", "Neutralization/Tritation Reactions",
+        "Solubility Products", "Oxidation Numbers", "Balancing Redox (WIP)",
+        "Reaction Potential (WIP)", "Electroplating", "Nuclear Chem"
         ]
 
 rxType = ""

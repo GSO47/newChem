@@ -1458,6 +1458,238 @@ def fiftyeight(**kwargs):
     
     return f"rate law: {rate_law}, k: {k}"
 
+def fiftynine(**kwargs):
+    # equilibrium expression
+    rx = reaction("eq")
+    print(f"Consider the following reaction: {rx.phaseStr()}. What is the equilbrium expression for this reaction?")
+    return rx.eqExpressionStr()
+
+def sixty(**kwargs):
+    # calculating missing eq concentration
+    rx = reaction("eq", waterAsGas = True)
+    prodEq, reactEq = rx.eqExpression()
+    prodEq = [(p[0], conc) for p, conc in zip(prodEq, rx.prodEqConcs)]
+    reactEq = [(r[0], conc) for r, conc in zip(reactEq, rx.reactEqConcs)]
+    totEq = prodEq + reactEq
+    totStr = [f" There is (are) {round_sig(conc)} M of {cmpd.__repr__()}." for cmpd, conc in totEq]
+    missing_index = random.randint(0,len(totStr) - 1)
+    missing_str = totStr.pop(missing_index)
+    print(f"Consider the following reaction: {rx.phaseStr()}. The equilibrium constant is {'{:0.4e}'.format(rx.K_eq)}.{''.join(totStr)} What is the concentration of {totEq[missing_index][0].__repr__()}?")
+    return missing_str[1:]
+
+def sixtyone(**kwargs):
+    # calculating K_eq from eq concentrations
+    rx = reaction("eq", waterAsGas = True)
+    prodEq, reactEq = rx.eqExpression()
+    prodEq = [(p[0], conc) for p, conc in zip(prodEq, rx.prodEqConcs)]
+    reactEq = [(r[0], conc) for r, conc in zip(reactEq, rx.reactEqConcs)]
+    totStr = [f" There is (are) {round_sig(conc)} M of {cmpd.__repr__()}." for cmpd, conc in prodEq + reactEq]
+    print(f"Consider the following reaction: {rx.phaseStr()}.{''.join(totStr)} What is the equilibrium constant?")
+    return '{:0.4e}'.format(rx.K_eq)
+
+def sixtytwo(**kwargs):
+    # calculating eq concs from intial concs (all reactants) and K_eq
+    while True:
+        rx = reaction("eq", waterAsGas = True)
+        prodEq, reactEq = rx.eqExpression()
+        intial_react_conc = random.randint(1,40) / 20 + .5
+        prodConcs = [0 for _ in rx.prodEqConcs]
+        reactConcs = [intial_react_conc for _ in rx.reactEqConcs]
+        try:
+            rx.eqConcsFromIntial(prodConcs, reactConcs)
+            for i in (rx.prodEqConcs + rx.reactEqConcs):
+                if i < 0: raise KeyError
+        except KeyError: continue
+
+        break
+
+    prodEq = [(p[0], conc) for p, conc in zip(prodEq, rx.prodEqConcs)]
+    reactEq = [(r[0], conc) for r, conc in zip(reactEq, rx.reactEqConcs)]
+
+    print(f"Consider the following reaction: {rx.phaseStr()}. The equilibrium constant is {'{:0.4e}'.format(rx.K_eq)}. Intially, each reactant is at {intial_react_conc} M. What are the equilibrium concentrations?")
+    return "".join([f"There is (are) {round_sig(conc)} M of {cmpd.__repr__()}. " for cmpd, conc in prodEq + reactEq])
+
+def sixtythree(**kwargs):
+    # pH conversions
+    molarity = random.random() * (10 ** random.randint(-13,0))
+    a = acid("HCl", molarity)
+    answers = [("pH", a.pH()), ("pOH", a.pOH()), ("H+ concentration", a.HConc()), ("OH- Concentration", a.OHConc())]
+    chosen = random.choice(answers)
+    answers.remove(chosen)
+
+    ans = random.choice(answers)
+    print(f"If the {chosen[0]} is {round_sig(chosen[1])}, what is the {ans[0]}?")
+    return round_sig(ans[1])
+
+def sixtyfour(**kwargs):
+    # pH from molarity
+    molarity = random.random() * (10 ** random.randint(-14,0))
+    isAcid = bool(random.getrandbits(1))
+    if isAcid: 
+        eq = random.choice(list(KaDict.keys()))
+        ab = acid(eq, molarity=molarity)
+    else:
+        eq = random.choice(list(KbDict.keys()))
+        ab = base(eq, molarity=molarity)
+    one = random.choice([("pH", ab.pH()), ("pOH", ab.pOH()), ("H+ concentration", ab.HConc()), ("OH- Concentration", ab.OHConc())])
+    one = list(one)
+    one[1] = round_sig(one[1])
+    answers = [one, (f"K{'a' if isAcid else 'b'}", "large" if ab.K_eq > 9e199 else round_sig(ab.K_eq)), ("molarity", round_sig(molarity))]
+
+    answer = random.choice(answers)
+    answers.remove(answer)
+
+    print(f"What is the {answer[0]} of a solution of {eq} where the {answers[0][0]} is {answers[0][1]} and the {answers[1][0]} is {answers[1][1]}?")
+    return round_sig(answer[1])
+
+# wip
+def sixtyfive(**kwargs):
+    # pH from Common Ion Effect
+    molarity = random.random() * (10 ** random.randint(-14,0))
+    isAcid = bool(random.getrandbits(1))
+    addedMolarity = random.randint(1,75) / 100 + .25
+    if isAcid: 
+        eq = random.choice(list(KaDict.keys()))
+        ab = acid(eq, molarity)
+        metal = elements[random.choice(list(metalsDict))][2]
+        mCharge = findCharge(metal)
+        nm = [ab.c_base.equation, ab.c_base.charge]
+        commonIon = ionicCompoundFromElements(m = [metal, mCharge], n = nm)
+        cFactor = mCharge
+    else:
+        eq = random.choice(list(KbDict.keys()))
+        ab = base(eq, molarity)
+        nm = randPolyatomic()
+        metal = [ab.c_acid.equation, ab.c_base.charge]
+        commonIon = ionicCompoundFromElements(m = metal, n = nm) 
+        cFactor = nm[1]
+
+    ab.addCommonIon(addedMolarity)
+
+    one = random.choice([("pH", ab.pH()), ("pOH", ab.pOH()), ("H+ concentration", ab.HConc()), ("OH- Concentration", ab.OHConc())])
+    one = list(one)
+    one[1] = round_sig(one[1])
+    answers = [one, (f"K{'a' if isAcid else 'b'}", "large" if ab.K_eq > 9e199 else round_sig(ab.K_eq)), ("molarity", round_sig(molarity))]
+
+    answer = random.choice(answers)
+    answers.remove(answer)
+
+    print(f"What is the {answer[0]} of a solution of {eq} where the {answers[0][0]} is {answers[0][1]} and the {answers[1][0]} is {answers[1][1]}, if there is {round_sig(addedMolarity / cFactor)} M of {commonIon} in the solution?")
+    return answer[1]
+
+def sixtysix(**kwargs):
+    # neutralization/tritration
+    strongAcids = ["HCl", "HI", "HBr", "HClO4", "HClO3", "HNO3", "H2SO4"]
+    strongBases = ["LiOH", "NaOH", "KOH", "RbOH", "CsOH", "Ca(OH)2", "Sr(OH)2", "Ba(OH)2"]
+    a = acid(random.choice(strongAcids), moles = random.randint(1,40) / 200 + .05, volume = random.randint(1,40) / 200)
+    b = base(random.choice(strongBases), moles = random.randint(1,40) / 200 + .05, volume = random.randint(1,40) / 200)
+    n = neutralization(a,b)
+
+    n_ab = n.leftover_ab
+    moles = n.salt_moles
+
+    one = [("pH", n_ab.pH(), ""), ("pOH", n_ab.pOH(), ""), ("H+ concentration", n_ab.HConc(), ""), ("OH- Concentration", n_ab.OHConc(), "")]
+    two = [('leftover moles of salt',  moles, "mol(s)"), ('number of particles in the salt', moles * 6.02e+23, "particles"), ("number of atoms in the salt", n.salt.getAtoms(moles), "atoms"), ("mass of the salt", n.salt.getMass(moles), "g")]
+    answer = random.choice(one + two)
+
+    print(f"When {a} is tritrated with {b}, what is the resulting {answer[0]} at equilibrium?")
+    return str(answer[1]) + " " + answer[2]
+
+def sixtyseven(**kwargs):
+    # k_sp
+    cmpd = compound(random.choice(list(KspDict)))
+
+    cIon = random.randint(0,2)
+    mConc = 0
+    nConc = 0
+    cStr = ""
+
+    s_rx = cmpd.solubility_rx(mConc, nConc)
+    reactants, _ = s_rx.eqExpression()
+
+    if cIon == 1: 
+        mConc = random.randint(1,40) / 200 + .05
+        cStr = f" if there is {mConc} M of {reactants[0][0]} in the solution"
+    if cIon == 2: 
+        nConc = random.randint(1,40) / 200 + .05
+        cStr = f" if there is {nConc} M of {reactants[1][0]} in the solution"
+
+    options = [(product[0], conc) for product, conc in zip(reactants, s_rx.prodEqConcs)]
+    chosen = random.choice(options)
+
+    print(f"If the K_sp of {cmpd} is {cmpd.K_sp}, what is the concentration of the {chosen[0]} ion{cStr}.")
+    return '{:e}'.format(chosen[1])
+
+def sixtyeight(**kwargs):
+    # oxidation numbers
+    cmpd = compound(getRandomCompound())
+    oNums = cmpd.oxidation_numbers()
+    oStr = ', '.join([f"{el}: {oNums[el]}" for el in oNums])
+
+    print(f"What are the oxidation numbers of {cmpd}")
+    return oStr
+
+def sixtynine(**kwargs):
+    # balancing redox (WIP)
+    pass
+
+def seventy(**kwargs):
+    # reaction potentials (WIP)
+    pass
+
+def seventyone(**kwargs):
+    # electroplating
+    while (cmpd := compound(getRandomCompound(1,0,0,0,0))):
+        if len(cmpd.compound) != 2: break
+
+    metal, mCharge = ionizeTernaryIonic(cmpd.equation)[0]
+    metal = compound(metal)
+    current = random.randint(1,100) / 20 + .5
+    time = random.randint(100,999) * 100
+
+    mass = round_sig(metal.getMass(current * time / (F * mCharge)))
+    options = [(f"A current of {current} C/t is applied", "What is the current", current, "C/t"), 
+               (f"The current is applied for {time} s", "How long is the current applied", time, "s"),
+                (f"{mass} g of {metal} is deposited", f"How much {metal} is deposited", mass, "g")]
+    chosen = random.choice(options)
+    options.remove(chosen)
+
+    print(f"{options[0][0]}. {options[1][0]}. {chosen[1]}?")
+    return f"{chosen[2]} {chosen[3]}"
+
+def seventytwo(**kwargs):
+    # nuclear chem
+    protons = random.randint(88, 118)
+    neutrons = neutronList[protons] + random.randint(-2,2)
+    el = [protons, neutrons]
+    particles = {"alpha particle" : [4,2], "beta particle" : [0,-1], "positron" : [0,1], "proton" : [1,1], "neutron" : [1,0]}
+
+    match random.randint(1,6):
+        case 1 | 2 | 3: numParticles = 1
+        case 4 | 5: numParticles = 2
+        case 6: numParticles = 3
+    
+    parts = []
+    for _ in range(numParticles):
+        while t := random.choice(list(particles)):
+            if t not in parts: break
+        
+        parts.append(t)
+    
+    parities = [1 if bool(random.getrandbits(1)) else -1 for _ in range(numParticles)]
+    
+    newEl = [protons, neutrons]
+    for parity, nums in zip(parities, parts):
+        newEl[0] += parity * particles[nums][0]
+        newEl[1] += parity * particles[nums][1]
+    
+    origElement = elements[protons][2] + "-" + str(neutrons)
+    newElement = elements[newEl[0]][2] + "-" + str(newEl[1])
+
+    words = [action + " emission" if i < 0 else action + " absorption" for action, i in zip(parts, parities)]
+    print(f"A particle of {origElement} undergoes {' and '.join(words)}. What particle is created?")
+    return newElement
+
 def polyatomicIonTest(polyatomicIonChoices):
     name = random.choice(polyatomicIonChoices)
     ion = polyatomicIons.get(name)
