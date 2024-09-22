@@ -25,7 +25,7 @@ modeList = [
         "Molar Mass From bp/fp", "Henry's Law", "Reactions with Solubility Units", 
         "Hydrates", "Polar vs Nonpolar", "Basic Concentration",
         "Method of Initial Rates", "Determining the Equilibrium Constant", "Missing Equilibrium Concentration",
-        "Calculating K_eq", "Calculating Equilibrium Concentrations from Initial", "pH Conversions",
+        "Calculating K_eq", "Calculating Equilibrium Concentrations from Initial", "More Thermodynamics", "pH Conversions",
         "pH from Molarity", "pH with Common Ion Effect", "Neutralization/Tritation Reactions",
         "Solubility Products", "Oxidation Numbers", "Balancing Redox (WIP)",
         "Reaction Potential (WIP)", "Electroplating", "Nuclear Chem"
@@ -131,7 +131,13 @@ while True:
                                 "Chapter 12" : [18, 19, 20, 21],
                                 "Chapter 13" : [i for i in range(22, 33)],
                                 "Chapter 14-16" : [i for i in range(33, 46)],
-                                "Chapter 17-18" : [i for i in range(46, 57)]}
+                                "Chapter 17-18" : [i for i in range(46, 57)],       
+                                "Rates": [57, 58], # rates
+                                "Equilibrium" : [59, 60, 61, 62], # eq
+                                "More Thermodynmaics" : [63], # thermo v2
+                                "Acid-Base": [64, 65, 66, 67, 68], # acid/base
+                                "Redox": [69, 70, 71, 72], # redox
+                                "Nuclear": [73]}
                     for i, preset in enumerate(list(presets.keys())): print(f"{i+1}. {preset}: {presets.get(preset)}")
                     choices = list(presets.values())[int(input("Choose a preset: ")) -1]
                 else:

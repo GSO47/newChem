@@ -1187,6 +1187,16 @@ class element:
 
 class compound:
     def __init__(self, compoundList = "RANDOM", charge = 0):
+        if compoundList == "e-":
+            self.charge = -1
+            self.K_sp = None
+            self.name = "electron"
+            self.equation = "e-"
+            self.type = "electron"
+            self.compound = []
+            self.temp = 0
+            return None
+
         self.charge = charge
         self.K_sp = None
         if compoundList == "RANDOM": compoundList = getRandomCompound()
@@ -1233,6 +1243,7 @@ class compound:
         return self.__repr__()
 
     def __repr__(self):
+        if self.equation == "e-": return "e-"
         return self.equation + ("_" + str(self.charge)) * (self.charge != 0)
 
     def getEq(self): # why did i even make this method?!
@@ -1723,7 +1734,7 @@ class compound:
         for i in self.compound:
             if i[0] == el: return i[1]
 
-        raise Exception(f"el {el} not found in {self.equation}")
+        return 0
 
     def isIonic(self):
         metal = self.compound[0][0]
@@ -1946,7 +1957,7 @@ class reaction:
             rxStr += str(coefficient) + str(cmpd) + " + "
         rxStr = rxStr[:-3]
         if self.typeRx == "d": rxStr += "--Δ-->"
-        else: rxStr += "----->"
+        else: rxStr += " -----> "
         if self.occurs or self.typeRx == "dr":
             for i, cmpd in enumerate(skeleton[1]):
                 try:
@@ -2137,17 +2148,23 @@ class reaction:
                 returnList = self.misc[2]
                 for index, product in enumerate(returnList[1]):
                     if product.equation == "NH4OH":
-                        returnList.pop(index)
-                        returnList.append(compound("NH3"))
-                        returnList.append(compound("H2O"))
+                        returnList[1].pop(index)
+                        returnList[1].append(compound("NH3"))
+                        returnList[1].append(compound("H2O"))
                     elif product.equation == "H2CO3":
-                        returnList.pop(index)
-                        returnList.append(compound("H2O"))
-                        returnList.append(compound("CO2"))
+                        returnList[1].pop(index)
+                        returnList[1].append(compound("H2O"))
+                        returnList[1].append(compound("CO2"))
                 self.occurs = False
-                for product in returnList[1]:
-                    if not product.isSoluable():
-                        self.occurs = True
+                try:
+                    for product in returnList[1]:
+                        if not product.isSoluable():
+                            self.occurs = True
+                except:
+                    print(returnList)
+                    print(self.reactantList)
+                    raise Exception("error generating skeleton equation")
+
                 return returnList
             case "special":
                 if self.misc[2] in ["dilute", "concentrated"]:
@@ -2351,10 +2368,11 @@ class reaction:
         i = 0
         n = len(self.reactants())
         curr = 0
+        coeffs = self.balanceEq()
         for phase, cmpd in zip(self.phases, self.allCompounds()):
             amount = thermoData.get(thermCompound(cmpd.equation + "(" + phase + ")"))[choice]
-            if i < n: curr -= amount
-            else: curr += amount
+            if i < n: curr -= coeffs[i] * amount
+            else: curr += coeffs[i] * amount
             i += 1
         return curr
 
@@ -2761,28 +2779,93 @@ class neutralization(reaction):
             self.leftover_ab = base(self.base.base.equation, moles = -leftover_moles, volume = self.totVol)
             self.salt_moles = prods[0][1] * self.acid.moles() / reacts[0][1]
 
-# honestly i may just skip this part
 class half_reaction(reaction):
     def __init__(self, init_cmpd : compound, final_cmpd : compound):
         rList = [init_cmpd]
         pList = [final_cmpd]
 
-        r_counts = {"O" : 0, "H" : 0, "e-": init_cmpd.charge}
-        oCount = init_cmpd.compoundDict.get("O")
-        if oCount != None: r_counts["O"] = oCount
-        hCount = init_cmpd.compoundDict.get("H")
-        if hCount != None: r_counts["H"] = hCount
+        rElements = [el for el in init_cmpd.compound if el[0] not in ["O", "H"]]
+        pElements = [el for el in final_cmpd.compound if el[0] not in ["O", "H"]]
+        if rElements != None and pElements != None:
+            el1, num1 = rElements[0]
+            num2 = final_cmpd.getNumEl(el1)
+            rElements = [[el, num * num2] for el, num in rElements]
+            pElements = [[el, num * num1] for el, num in pElements]
 
-        p_counts = {"O" : 0, "H" : 0, "e-": final_cmpd.charge}
-        oCount = final_cmpd.compoundDict.get("O")
-        if oCount != None: p_counts["O"] = oCount
-        hCount = final_cmpd.compoundDict.get("H")
-        if hCount != None: p_counts["H"] = hCount
+        if rElements != pElements:
+            print(rElements)
+            print(pElements)
+            raise Exception("invalid half reaction")
 
-        if p_counts["O"] < r_counts["O"]: pList.append(compound("H2O"))
-        elif p_counts["O"] > r_counts["O"]: rList.append(compound("H2O"))
+        rCoeffs = [num2]
+        pCoeffs = [num1]
 
-        super().__init__(inputList)
+        r_counts = {"O" : num2 * init_cmpd.getNumEl("O"), "H" : num2 * init_cmpd.getNumEl("H"), "e-": num2 * init_cmpd.charge}
+        p_counts = {"O" : num1 * final_cmpd.getNumEl("O"), "H" : num1 * final_cmpd.getNumEl("H"), "e-": num1 * final_cmpd.charge}
+
+        added = [] # will be # H2O, # H+, # e- (- means reactants, + means products)
+
+        oDelta = r_counts["O"] - p_counts["O"]
+        if oDelta < 0: 
+            oDelta = -oDelta
+            rList.append(compound("H2O"))
+            rCoeffs.append(oDelta)
+            r_counts["O"] += oDelta
+            r_counts["H"] += 2 * oDelta
+        elif oDelta > 0:
+            pList.append(compound("H2O"))
+            pCoeffs.append(oDelta)
+            p_counts["O"] += oDelta
+            p_counts["H"] += 2 * oDelta
+
+        hDelta = r_counts["H"] - p_counts["H"]
+        added.append(hDelta)
+        if hDelta < 0:
+            hDelta = -hDelta 
+            rList.append(compound("H_+1"))
+            rCoeffs.append(hDelta)
+            r_counts["H"] += hDelta
+            r_counts["e-"] += hDelta
+        elif hDelta > 0:
+            pList.append(compound("H_+1"))
+            pCoeffs.append(hDelta)
+            p_counts["H"] += hDelta
+            p_counts["e-"] += hDelta
+
+        eDelta = p_counts["e-"] - r_counts['e-']
+        added.append(eDelta)
+        if eDelta > 0:
+            pList.append(compound("e-"))
+            pCoeffs.append(eDelta)
+            p_counts["e-"] -= eDelta
+        elif eDelta < 0:
+            eDelta = -eDelta
+            rList.append(compound("e-"))
+            rCoeffs.append(eDelta)
+            r_counts["e-"] -= eDelta
+
+        self.skele_eq = [rList, pList]
+        self.coeffs = rCoeffs + pCoeffs
+
+        self.phases = None
+        self.K_eq = None
+        self.reactantList = None
+        self.typeRx = "redox"
+        self.misc = None
+        self.occurs = True
+        # electrons on the right means oxidized, electrons on the left mean reduced
+    
+    # just have to redo calance_eq and skeleton str
+    def balanceEq(self):
+        return self.coeffs
+    
+    def SkeletonEquation(self) -> list[list[compound]]:
+        return self.skele_eq
+
+# finish this code
+class redox_reaction(reaction):
+    def __init__(self, red : half_reaction, ox : half_reaction):
+        pass
 
 boxSize = 9
 

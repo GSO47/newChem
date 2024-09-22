@@ -1,5 +1,13 @@
-from chemFuncts import compound, getRandomCompound
+from chemFuncts import half_reaction, compound
 
-cmpd = compound("Pt2Cr2O7")
+# init = compound('Cr2O7_-2')
+# final = compound("Cr_+3")
+# redox = half_reaction(init, final)
 
-print(cmpd.oxidation_numbers())
+# print(redox)
+
+init = compound('I-')
+final = compound("IO3-")
+redox = half_reaction(init, final)
+
+print(redox)

@@ -1510,6 +1510,19 @@ def sixtytwo(**kwargs):
     return "".join([f"There is (are) {round_sig(conc)} M of {cmpd.__repr__()}. " for cmpd, conc in prodEq + reactEq])
 
 def sixtythree(**kwargs):
+    # thermodynamics part 2 electric boogaloo
+    while rx := reaction(randomRx()):
+        if rx.checkRxForThermo(): break
+    
+    choice = random.randint(0,2)
+    chosen = ["enthalpy", "gibbs free energy", "entropy"][choice]
+
+    data = [f"The {chosen} of {cmpd} is {thermoData.get(thermCompound(cmpd.equation + '(' + phase + ')'))[choice]}. " for cmpd, phase in zip(rx.allCompounds(), rx.phases)]
+
+    print(f"Consider the reaction {rx.phaseStr()}. {''.join(data)}What is the {chosen} of the reaction?")
+    return rx.thermoProfile(choice)
+
+def sixtyfour(**kwargs):
     # pH conversions
     molarity = random.random() * (10 ** random.randint(-13,0))
     a = acid("HCl", molarity)
@@ -1521,7 +1534,7 @@ def sixtythree(**kwargs):
     print(f"If the {chosen[0]} is {round_sig(chosen[1])}, what is the {ans[0]}?")
     return round_sig(ans[1])
 
-def sixtyfour(**kwargs):
+def sixtyfive(**kwargs):
     # pH from molarity
     molarity = random.random() * (10 ** random.randint(-14,0))
     isAcid = bool(random.getrandbits(1))
@@ -1542,8 +1555,7 @@ def sixtyfour(**kwargs):
     print(f"What is the {answer[0]} of a solution of {eq} where the {answers[0][0]} is {answers[0][1]} and the {answers[1][0]} is {answers[1][1]}?")
     return round_sig(answer[1])
 
-# wip
-def sixtyfive(**kwargs):
+def sixtysix(**kwargs):
     # pH from Common Ion Effect
     molarity = random.random() * (10 ** random.randint(-14,0))
     isAcid = bool(random.getrandbits(1))
@@ -1577,7 +1589,7 @@ def sixtyfive(**kwargs):
     print(f"What is the {answer[0]} of a solution of {eq} where the {answers[0][0]} is {answers[0][1]} and the {answers[1][0]} is {answers[1][1]}, if there is {round_sig(addedMolarity / cFactor)} M of {commonIon} in the solution?")
     return answer[1]
 
-def sixtysix(**kwargs):
+def sixtyseven(**kwargs):
     # neutralization/tritration
     strongAcids = ["HCl", "HI", "HBr", "HClO4", "HClO3", "HNO3", "H2SO4"]
     strongBases = ["LiOH", "NaOH", "KOH", "RbOH", "CsOH", "Ca(OH)2", "Sr(OH)2", "Ba(OH)2"]
@@ -1595,7 +1607,7 @@ def sixtysix(**kwargs):
     print(f"When {a} is tritrated with {b}, what is the resulting {answer[0]} at equilibrium?")
     return str(answer[1]) + " " + answer[2]
 
-def sixtyseven(**kwargs):
+def sixtyeight(**kwargs):
     # k_sp
     cmpd = compound(random.choice(list(KspDict)))
 
@@ -1620,7 +1632,7 @@ def sixtyseven(**kwargs):
     print(f"If the K_sp of {cmpd} is {cmpd.K_sp}, what is the concentration of the {chosen[0]} ion{cStr}.")
     return '{:e}'.format(chosen[1])
 
-def sixtyeight(**kwargs):
+def sixtynine(**kwargs):
     # oxidation numbers
     cmpd = compound(getRandomCompound())
     oNums = cmpd.oxidation_numbers()
@@ -1629,15 +1641,15 @@ def sixtyeight(**kwargs):
     print(f"What are the oxidation numbers of {cmpd}")
     return oStr
 
-def sixtynine(**kwargs):
+def seventy(**kwargs):
     # balancing redox (WIP)
     pass
 
-def seventy(**kwargs):
+def seventyone(**kwargs):
     # reaction potentials (WIP)
     pass
 
-def seventyone(**kwargs):
+def seventytwo(**kwargs):
     # electroplating
     while (cmpd := compound(getRandomCompound(1,0,0,0,0))):
         if len(cmpd.compound) != 2: break
@@ -1657,7 +1669,7 @@ def seventyone(**kwargs):
     print(f"{options[0][0]}. {options[1][0]}. {chosen[1]}?")
     return f"{chosen[2]} {chosen[3]}"
 
-def seventytwo(**kwargs):
+def seventythree(**kwargs):
     # nuclear chem
     protons = random.randint(88, 118)
     neutrons = neutronList[protons] + random.randint(-2,2)

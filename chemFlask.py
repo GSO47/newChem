@@ -55,22 +55,33 @@ def getModes():
         "Solubility Calculations", "Determining Saturation", "Dilution",
         "Solutions Unit Conversions (Aqueous)", "Solutions Unit Conversions (general)", "Colligative Properties", 
         "Molar Mass From bp/fp", "Henry's Law", "Reactions with Solubility Units", 
-        "Hydrates", "Polar vs Nonpolar"
+        "Hydrates", "Polar vs Nonpolar", "More Thermodynamics", "Basic Concentration",
+        "Method of Initial Rates", "Determining the Equilibrium Constant", "Missing Equilibrium Concentration",
+        "Calculating K_eq", "Calculating Equilibrium Concentrations from Initial", "pH Conversions",
+        "pH from Molarity", "pH with Common Ion Effect", "Neutralization/Tritation Reactions",
+        "Solubility Products", "Oxidation Numbers", "Balancing Redox (WIP)",
+        "Reaction Potential (WIP)", "Electroplating", "Nuclear Chem"
         ]
 
 def tableOfContents(n):
     return { 0 : [i for i, _ in enumerate(getModes())], 
-      1 : [1], 
-      2: [2, 3, 4, 5], 
-      3: [6, 7, 8, 9, 10], 
-      4: [11,12], 
-      5: [13, 14], 
-      6: [15, 16, 17], 
-      7: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
-      8 : [18, 19, 20, 21],
-      9 : [22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32],
-      10: [i for i in range(33, 46)],
-      11: [i for i in range(46,57)]}.get(n)
+      1 : [1], # review
+      2: [2, 3, 4, 5], # nomenclature
+      3: [6, 7, 8, 9, 10], # quantities
+      4: [11,12], # reactions
+      5: [13, 14], # stoic
+      6: [15, 16, 17], # thermo
+      7: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17], # sem 1
+      8 : [18, 19, 20, 21], # gas laws
+      9 : [22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32], # electron config
+      10: [i for i in range(33, 46)], # periodic trends and bonds
+      11: [i for i in range(46,57)], # solutions
+      12: [57, 58], # rates
+      13 : [59, 60, 61, 62], # eq
+      14 : [63], # thermo v2
+      15: [64, 65, 66, 67, 68], # acid/base
+      16: [69, 70, 71, 72], # redox
+      17: [73]}.get(n) # nuclear
 
 def setRandomChoices(choices):
     global randomChoices
@@ -80,7 +91,7 @@ def getRandomChoices():
     global randomChoices
     return randomChoices
 
-setRandomChoices([i+1 for i in range(0,len(getModes()))])
+setRandomChoices([i+1 for i in range(0,len(getModes())) if i + 1 not in [70, 71]])
 
 def setRandom(r):
     global isRandom
@@ -139,7 +150,8 @@ def getQuestion(num):
         rxType = getRxType()
         flaskified = flaskify(func, rxType)
         setAnswer(flaskified[1])
-        return render_template('question.html', question = flaskified[0])
+        print(flaskified[0].splitlines())
+        return render_template('question.html', question = flaskified[0].splitlines())
     
     if request.method == "POST":
         n = getLastQuestion()
