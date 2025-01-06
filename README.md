@@ -62,7 +62,7 @@ The 'Get Many Questions' buttons allows you to generate a pre-determined number 
 
 ## Future Improvements
 
-- There are still many bugs: for example, the thermochemistry reaction sometimes crashes the website.
+- There are still many bugs: for example, the thermochemistry and gas laws stoiciometry problems sometimes crashes the website.
 - Lewis Dot Diagrams are fairly inconsistent, the current version sometimes provides incorrect structures. I am looking into a different way of generating Lewis Dot Diagrams that is more efficient and reliable.
 - Electrochemistry is a work in progress. While the functionality for half-reactions is complete, the code for combining them and generating balanaced redox reactions is as of yet incomplete.
 - The website needs an improved UI and design.  
